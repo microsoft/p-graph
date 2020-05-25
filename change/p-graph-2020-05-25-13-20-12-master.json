@@ -1,0 +1,8 @@
+{
+  "type": "patch",
+  "comment": "change the url of the p-graph",
+  "packageName": "p-graph",
+  "email": "kchau@microsoft.com",
+  "dependentChangeType": "patch",
+  "date": "2020-05-25T20:20:12.831Z"
+}
