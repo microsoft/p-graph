@@ -1,0 +1,25 @@
+{
+  "name": "p-graph",
+  "version": "0.4.0",
+  "license": "MIT",
+  "main": "lib/index.js",
+  "types": "lib/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "start": "tsc -w --preserveWatchOutput",
+    "test": "jest",
+    "release": "yarn build && yarn test && beachball publish",
+    "check": "beachball check",
+    "change": "beachball change"
+  },
+  "repository": {
+    "url": "https://github.com/kenotron/p-graph"
+  },
+  "devDependencies": {
+    "@types/jest": "^25.2.1",
+    "beachball": "^1.31.0",
+    "jest": "^25.5.3",
+    "ts-jest": "^25.4.0",
+    "typescript": "^3.8.3"
+  }
+}

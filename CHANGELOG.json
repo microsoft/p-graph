@@ -1,0 +1,192 @@
+{
+  "name": "p-graph",
+  "entries": [
+    {
+      "date": "Tue, 05 May 2020 21:42:11 GMT",
+      "tag": "p-graph_v0.4.0",
+      "version": "0.4.0",
+      "comments": {
+        "none": [
+          {
+            "comment": "adding test before release",
+            "author": "kchau@microsoft.com",
+            "commit": "4acba927925474f330d00abcbdfb85b261185bec",
+            "package": "p-graph"
+          }
+        ]
+      }
+    },
+    {
+      "date": "Tue, 05 May 2020 21:41:06 GMT",
+      "tag": "p-graph_v0.4.0",
+      "version": "0.4.0",
+      "comments": {
+        "patch": [
+          {
+            "comment": "fix typings",
+            "author": "kchau@microsoft.com",
+            "commit": "8c344d7555cece152271094fb19e0a2d454aab61",
+            "package": "p-graph"
+          }
+        ],
+        "minor": [
+          {
+            "comment": "ripped out the dependency on p-queue",
+            "author": "kchau@microsoft.com",
+            "commit": "0471bdb2615e368c3d801798a255d603569ddb64",
+            "package": "p-graph"
+          }
+        ]
+      }
+    },
+    {
+      "date": "Fri, 01 May 2020 20:41:56 GMT",
+      "tag": "p-graph_v0.3.4",
+      "version": "0.3.4",
+      "comments": {
+        "patch": [
+          {
+            "comment": "process the args accurately",
+            "author": "kchau@microsoft.com",
+            "commit": "7fe3fabf056ce9f6c7d4ed5d756e86789602a6dd",
+            "package": "p-graph"
+          }
+        ]
+      }
+    },
+    {
+      "date": "Fri, 01 May 2020 19:12:59 GMT",
+      "tag": "p-graph_v0.3.3",
+      "version": "0.3.3",
+      "comments": {
+        "patch": [
+          {
+            "comment": "this lib is using esm default to publish, so it's a bit different in how to require",
+            "author": "kchau@microsoft.com",
+            "commit": "9a97d9f11a3da35ec6bc7f6230e51846d6bf73a8",
+            "package": "p-graph"
+          }
+        ]
+      }
+    },
+    {
+      "date": "Fri, 01 May 2020 18:26:56 GMT",
+      "tag": "p-graph_v0.3.2",
+      "version": "0.3.2",
+      "comments": {
+        "patch": [
+          {
+            "comment": "one more way of doing pGraph() call in types",
+            "author": "kchau@microsoft.com",
+            "commit": "7700bc7f9dea02d7be0dfa1020e5507eaf9d67d4",
+            "package": "p-graph"
+          }
+        ]
+      }
+    },
+    {
+      "date": "Fri, 01 May 2020 18:25:27 GMT",
+      "tag": "p-graph_v0.3.1",
+      "version": "0.3.1",
+      "comments": {
+        "patch": [
+          {
+            "comment": "one more way of doing pGraph() call in types",
+            "author": "kchau@microsoft.com",
+            "commit": "c1da50e3d23c4807ce8f486015ed33cb65f9f69d",
+            "package": "p-graph"
+          }
+        ]
+      }
+    },
+    {
+      "date": "Fri, 01 May 2020 18:21:34 GMT",
+      "tag": "p-graph_v0.3.0",
+      "version": "0.3.0",
+      "comments": {
+        "minor": [
+          {
+            "comment": "making public api work with 2 args with options",
+            "author": "kchau@microsoft.com",
+            "commit": "4198ea4a7d95ba40d423d4d98fba9e73f0f750e5",
+            "package": "p-graph"
+          }
+        ]
+      }
+    },
+    {
+      "date": "Fri, 01 May 2020 17:55:50 GMT",
+      "tag": "p-graph_v0.2.4",
+      "version": "0.2.4",
+      "comments": {
+        "patch": [
+          {
+            "comment": "removed the section of readme that is known not to work",
+            "author": "kchau@microsoft.com",
+            "commit": "e25641e2e34d952eb7ae30af79c3269d340ace23",
+            "package": "p-graph"
+          }
+        ]
+      }
+    },
+    {
+      "date": "Fri, 01 May 2020 17:39:19 GMT",
+      "tag": "p-graph_v0.2.3",
+      "version": "0.2.3",
+      "comments": {
+        "patch": [
+          {
+            "comment": "fixes the url",
+            "author": "kchau@microsoft.com",
+            "commit": "7c7ebfcd0ef6794ff2f6bffc9bfbd3888fe07447",
+            "package": "p-graph"
+          }
+        ]
+      }
+    },
+    {
+      "date": "Fri, 01 May 2020 17:37:29 GMT",
+      "tag": "p-graph_v0.2.2",
+      "version": "0.2.2",
+      "comments": {
+        "patch": [
+          {
+            "comment": "updates the readme.md and added a url to the package.json",
+            "author": "kchau@microsoft.com",
+            "commit": "b23b85b41f9adc3ebf8f6e1f936d25ca25640e89",
+            "package": "p-graph"
+          }
+        ]
+      }
+    },
+    {
+      "date": "Fri, 01 May 2020 16:30:46 GMT",
+      "tag": "p-graph_v0.2.1",
+      "version": "0.2.1",
+      "comments": {
+        "patch": [
+          {
+            "comment": "added types",
+            "author": "kchau@microsoft.com",
+            "commit": "560fba181433eafc55043be0c101613c3dff54fc",
+            "package": "p-graph"
+          }
+        ]
+      }
+    },
+    {
+      "date": "Fri, 01 May 2020 16:15:38 GMT",
+      "tag": "p-graph_v0.2.0",
+      "version": "0.2.0",
+      "comments": {
+        "minor": [
+          {
+            "author": "kchau@microsoft.com",
+            "commit": "9ee9ae8897acc7213768680b37c1cb3b18234bb6",
+            "package": "p-graph"
+          }
+        ]
+      }
+    }
+  ]
+}

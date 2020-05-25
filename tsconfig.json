@@ -1,0 +1,13 @@
+{
+  "compilerOptions": {
+    "target": "ES2017",
+    "declaration": true,
+    "module": "CommonJS",
+    "moduleResolution": "node",
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
+    "lib": ["ES2017"],
+    "outDir": "lib"
+  },
+  "include": ["src"]
+}
