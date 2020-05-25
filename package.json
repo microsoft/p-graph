@@ -13,7 +13,7 @@
     "change": "beachball change"
   },
   "repository": {
-    "url": "https://github.com/kenotron/p-graph"
+    "url": "https://github.com/microsoft/p-graph"
   },
   "devDependencies": {
     "@types/jest": "^25.2.1",
