@@ -1,8 +1,16 @@
 # Change Log - p-graph
 
-This log was last generated on Tue, 05 May 2020 21:41:06 GMT and should not be manually modified.
+This log was last generated on Mon, 25 May 2020 21:06:05 GMT and should not be manually modified.
 
 <!-- Start content -->
+
+## 0.4.1
+
+Mon, 25 May 2020 21:06:05 GMT
+
+### Patches
+
+- change the url of the p-graph (kchau@microsoft.com)
 
 ## 0.4.0
 
