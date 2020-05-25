@@ -37,6 +37,12 @@ describe("PGraph", () => {
     graph.set("fn1", new Set(["fn2", "fail"]));
 
     const pGraph = new PGraph(fns, graph);
-    await pGraph.run();
+
+    expect.assertions(1);
+    try {
+      await pGraph.run();
+    } catch (e) {
+      expect(e).toBeTruthy();
+    }
   });
 });
