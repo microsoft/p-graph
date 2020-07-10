@@ -31,90 +31,12 @@ const graph = [
 await pGraph(graph).run({ concurrency: 3 }); // returns a promise that will resolve when all the tasks are done from this graph in order
 ```
 
-### Ways to define a graph
+## Concurrency Limiter
 
-1. Use a dependency array
-
-```js
-const putOnShirt = () => Promise.resolve("put on your shirt");
-const putOnShorts = () => Promise.resolve("put on your shorts");
-const putOnJacket = () => Promise.resolve("put on your jacket");
-const putOnShoes = () => Promise.resolve("put on your shoes");
-const tieShoes = () => Promise.resolve("tie your shoes");
-
-const graph = [
-  [putOnShoes, tieShoes],
-  [putOnShirt, putOnJacket],
-  [putOnShorts, putOnJacket],
-  [putOnShorts, putOnShoes],
-];
-
-await pGraph(graph);
-```
-
-2. Use a dependency array with a list of named functions
+There are some contexts where you may want to limit the number of functions running concurrently. One example would be to prevent overloading the CPU with too many parallel tasks. The concurrency argument to `run` will limit the number of functions that start running at a given time
 
 ```js
-const funcs = new Map();
-
-funcs.set("putOnShirt", () => Promise.resolve("put on your shirt"));
-funcs.set("putOnShorts", () => Promise.resolve("put on your shorts"));
-funcs.set("putOnJacket", () => Promise.resolve("put on your jacket"));
-funcs.set("putOnShoes", () => Promise.resolve("put on your shoes"));
-funcs.set("tieShoes", () => Promise.resolve("tie your shoes"));
-
-const graph = [
-  ["putOnShoes", "tieShoes"],
-  ["putOnShirt", "putOnJacket"],
-  ["putOnShorts", "putOnJacket"],
-  ["putOnShorts", "putOnShoes"],
-];
-
-await pGraph(funcs, graph);
-```
-
-3. Use a dependency map with a list of named functions
-
-```js
-const funcs = new Map();
-
-funcs.set("putOnShirt", () => Promise.resolve("put on your shirt"));
-funcs.set("putOnShorts", () => Promise.resolve("put on your shorts"));
-funcs.set("putOnJacket", () => Promise.resolve("put on your jacket"));
-funcs.set("putOnShoes", () => Promise.resolve("put on your shoes"));
-funcs.set("tieShoes", () => Promise.resolve("tie your shoes"));
-
-const depMap = new Map();
-
-depMap.set("tieShoes", new Set(["putOnShoes"]));
-depMap.set("putOnJacket", new Set(["putOnShirt", "putOnShorts"]));
-depMap.set("putOnShoes", new Set(["putOnShorts"]));
-depMap.set("putOnShorts", new Set());
-depMap.set("putOnShirt", new Set());
-
-await pGraph(funcs, depMap);
-```
-
-### Using the ID as argument to the same function
-
-In many cases, the jobs that need to run are the same where the only difference is the arguments for the function. In that case, you can treat the IDs as arguments as they are passed into the Run Function.
-
-```ts
-type Id = unknown;
-type RunFunction = (id: Id) => Promise<unknown>;
-```
-
-As you can see, the ID can be anything. It will be passed as the argument for your Run Function. This is a good option if having a large number of functions inside a graph is prohibitive in memory sensitive situations.
-
-```js
-const funcs = new Map();
-const thatImportantTask = (id) => Promise.resolve(id);
-
-funcs.set("putOnShirt", thatImportantTask);
-funcs.set("putOnShorts", thatImportantTask);
-funcs.set("putOnJacket", thatImportantTask);
-funcs.set("putOnShoes", thatImportantTask);
-funcs.set("tieShoes", thatImportantTask);
+await pGraph(graph).run({ maxConcurrency: 3 });
 ```
 
 # Contributing

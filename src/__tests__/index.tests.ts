@@ -7,6 +7,9 @@ interface MockFunctionDefinition {
 
   /** How many ticks this function should take to simulate the duration of the function execution */
   duration: number;
+
+  /** Priority value to pass to the PGraphNode that is crated */
+  priority?: number;
 }
 
 /** A record of a function start or end event that can be composed to create an ordered log of function calls **/
@@ -64,7 +67,7 @@ class FunctionScheduler {
 }
 
 function defineMockNode(definition: MockFunctionDefinition, functionScheduler: FunctionScheduler): [string, PGraphNode] {
-  return [definition.name, { run: () => functionScheduler.startExecutingFunction(definition) }];
+  return [definition.name, { run: () => functionScheduler.startExecutingFunction(definition), priority: definition.priority }];
 }
 
 declare global {
@@ -74,6 +77,11 @@ declare global {
        * Enforces that a particular schedule does not schedule secondTaskName until firstTaskName is complete
        */
       toHaveScheduleOrdering(firstTaskName: string, secondTaskName: string): R;
+
+      /**
+       * Enforces that a specific task was executed
+       */
+      toHaveScheduledTask(taskName: string): R;
     }
   }
 }
@@ -87,6 +95,20 @@ expect.extend({
 
     return {
       message: () => `expected ${secondTaskName} to be scheduled after ${firstTaskName}`,
+      pass,
+    };
+  },
+});
+
+expect.extend({
+  toHaveScheduledTask(callRecords: MockFunctionCallRecord[], taskName: string) {
+    const startIndex = callRecords.findIndex((item) => item.name === taskName && item.state === "end");
+    const endIndex = callRecords.findIndex((item) => item.name === taskName && item.state === "start");
+
+    const pass = startIndex !== -1 && endIndex !== -1;
+
+    return {
+      message: () => `expected to have scheduled task ${taskName}`,
       pass,
     };
   },
@@ -165,6 +187,48 @@ describe("Public API", () => {
     await expect(pGraph(nodeMap, dependencies).run()).rejects.toEqual("C rejected");
   });
 
+  it("throws when one of the dependencies references a node not in the node map", async () => {
+    const nodeMap: PGraphNodeMap = new Map([
+      ["A", { run: () => Promise.resolve() }],
+      ["B", { run: () => Promise.resolve() }],
+    ]);
+
+    //  A
+    // B C
+    const dependencies: DependencyList = [
+      ["A", "B"],
+      ["A", "C"],
+    ];
+
+    await expect(pGraph(nodeMap, dependencies).run()).rejects.toEqual("C rejected");
+  });
+
+  it("should run all dependencies for disconnected graphs", async () => {
+    const functionScheduler = new FunctionScheduler();
+
+    const nodeMap: PGraphNodeMap = new Map([
+      defineMockNode({ name: "A", duration: 1 }, functionScheduler),
+      defineMockNode({ name: "B", duration: 1 }, functionScheduler),
+      defineMockNode({ name: "C", duration: 1 }, functionScheduler),
+      defineMockNode({ name: "D", duration: 1 }, functionScheduler),
+    ]);
+
+    //  A    D
+    // B C
+    const dependencies: DependencyList = [
+      ["A", "B"],
+      ["A", "C"],
+    ];
+
+    await pGraph(nodeMap, dependencies).run();
+
+    const { callRecords } = functionScheduler;
+    expect(callRecords).toHaveScheduledTask("A");
+    expect(callRecords).toHaveScheduledTask("B");
+    expect(callRecords).toHaveScheduledTask("C");
+    expect(callRecords).toHaveScheduledTask("D");
+  });
+
   it("should be able to run more than one task at a time", async () => {
     const functionScheduler = new FunctionScheduler();
 
@@ -209,7 +273,39 @@ describe("Public API", () => {
 
     await pGraph(funcs, dependencies).run({ maxConcurrency: 3 });
 
-    // B and C should run concurrently
     expect(computeMaxConcurrency(functionScheduler.callRecords)).toBeLessThanOrEqual(3);
+  });
+
+  it("should schedule high priority tasks and dependencies before lower priority tasks", async () => {
+    const functionScheduler = new FunctionScheduler();
+
+    const funcs = new Map([
+      defineMockNode({ name: "A", duration: 1 }, functionScheduler),
+      defineMockNode({ name: "B", duration: 1 }, functionScheduler),
+      defineMockNode({ name: "C", duration: 1 }, functionScheduler),
+      defineMockNode({ name: "D", duration: 1 }, functionScheduler),
+      defineMockNode({ name: "E", duration: 1, priority: 16 }, functionScheduler),
+      defineMockNode({ name: "F", duration: 1 }, functionScheduler),
+    ]);
+
+    //      A
+    //  B   C   D
+    //    |E F|
+    const dependencies: DependencyList = [
+      ["A", "B"],
+      ["A", "C"],
+      ["A", "D"],
+      ["C", "E"],
+      ["C", "F"],
+    ];
+
+    await pGraph(funcs, dependencies).run();
+
+    // A -> C -> F is the critical path, it should be built first
+    expect(functionScheduler.callRecords).toHaveScheduleOrdering("C", "B");
+    expect(functionScheduler.callRecords).toHaveScheduleOrdering("C", "D");
+    expect(functionScheduler.callRecords).toHaveScheduleOrdering("F", "E");
+    expect(functionScheduler.callRecords).toHaveScheduleOrdering("F", "B");
+    expect(functionScheduler.callRecords).toHaveScheduleOrdering("F", "D");
   });
 });
