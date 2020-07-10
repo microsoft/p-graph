@@ -10,25 +10,30 @@ $ npm install p-graph
 
 ## Usage
 
-The p-graph library takes in a `graph` argument. To start, create a graph of functions that return promises (let's call them Run Functions), then run them through the pGraph API:
+The p-graph library takes in a map of of nodes and a list of dependencies. The keys in the map are unique string identifiers for each node in the graph. The value of the map is the definition of the task, including the function that should be executed by that task in it's run argument. The dependencies list is an array of tuples, each tuple contains the two values that must correspond to ids in the node map. The run function corresponding to the first item in the tuple must complete before the second item in the tuple can begin.
+
+The return value of pGraph is a class with a run object on it. Calling the run function will return a promise that resolves after all the run functions in the graph have finished completed. Tasks are run in an order that respects the dependency graph passed in.
 
 ```js
 const { default: pGraph } = require("p-graph"); // ES6 import also works: import pGraph from 'p-graph';
 
-const putOnShirt = () => Promise.resolve("put on your shirt");
-const putOnShorts = () => Promise.resolve("put on your shorts");
-const putOnJacket = () => Promise.resolve("put on your jacket");
-const putOnShoes = () => Promise.resolve("put on your shoes");
-const tieShoes = () => Promise.resolve("tie your shoes");
+const nodeMap = new Map([
+  ["putOnShirt", { run:  () => Promise.resolve("put on your shirt") })],
+  ["putOnShorts", { run: () => Promise.resolve("put on your shorts")})],
+  ["putOnJacket", { run: () => Promise.resolve("put on your jacket")})],
+  ["putOnShoes", { run: () => Promise.resolve("put on your shoes")}],
+  ["tieShoes", { run: () => Promise.resolve("tie your shoes")}],
+]);
 
-const graph = [
-  [putOnShoes, tieShoes],
-  [putOnShirt, putOnJacket],
-  [putOnShorts, putOnJacket],
-  [putOnShorts, putOnShoes],
+const dependencies: DependencyList = [
+  // You need to put your shoes on before you tie them!
+  ["putOnShoes", "tieShoes"],
+  ["putOnShirt", "putOnJacket"],
+  ["putOnShorts", "putOnJacket"],
+  ["putOnShorts", "putOnShoes"],
 ];
 
-await pGraph(graph).run({ concurrency: 3 }); // returns a promise that will resolve when all the tasks are done from this graph in order
+await pGraph(nodeMap, dependencies).run();
 ```
 
 ## Concurrency Limiter
@@ -38,6 +43,10 @@ There are some contexts where you may want to limit the number of functions runn
 ```js
 await pGraph(graph).run({ maxConcurrency: 3 });
 ```
+
+## Priority
+
+When the concurrency option is set, the task runner must pick a subset of available tasks to put on the queue. By default, tasks are considered to all be equally important and equally likely to be picked to run once all the tasks they depend on are complete. If you wish to control the ordering of tasks, consider using the priority option when defining a task node. When the task scheduler is picking tasks to run, it will favor tasks with a higher priority over tasks with a lower priority. Tasks will always execute in dependency order.
 
 # Contributing
 
