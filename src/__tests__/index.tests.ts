@@ -132,6 +132,22 @@ describe("Public API", () => {
     expect(callRecords).toHaveScheduleOrdering("putOnShorts", "putOnShoes");
   });
 
+  it("throws an exception when the dependency graph has a cycle", async () => {
+    const nodeMap: PGraphNodeMap = new Map([
+      ["A", { run: () => Promise.resolve() }],
+      ["B", { run: () => Promise.resolve() }],
+      ["C", { run: () => Promise.resolve() }],
+    ]);
+
+    const dependencies: DependencyList = [
+      ["A", "B"],
+      ["B", "C"],
+      ["C", "A"],
+    ];
+
+    await expect(pGraph(nodeMap, dependencies).run()).rejects.toBeTruthy();
+  });
+
   it("throws an exception when run is invoked and a task rejects its promise", async () => {
     const nodeMap: PGraphNodeMap = new Map([
       ["A", { run: () => Promise.resolve() }],
@@ -139,9 +155,11 @@ describe("Public API", () => {
       ["C", { run: () => Promise.reject("C rejected") }],
     ]);
 
+    //  A
+    // B C
     const dependencies: DependencyList = [
-      ["B", "A"],
-      ["C", "A"],
+      ["A", "B"],
+      ["A", "C"],
     ];
 
     await expect(pGraph(nodeMap, dependencies).run()).rejects.toEqual("C rejected");
@@ -159,8 +177,8 @@ describe("Public API", () => {
     //  A
     // B C
     const dependencies: DependencyList = [
-      ["B", "A"],
-      ["C", "A"],
+      ["A", "B"],
+      ["A", "C"],
     ];
 
     await pGraph(nodeMap, dependencies).run();
@@ -183,10 +201,10 @@ describe("Public API", () => {
     //    A
     // B C D E
     const dependencies: DependencyList = [
-      ["B", "A"],
-      ["C", "A"],
-      ["D", "A"],
-      ["E", "A"],
+      ["A", "B"],
+      ["A", "C"],
+      ["A", "D"],
+      ["A", "E"],
     ];
 
     await pGraph(funcs, dependencies).run({ maxConcurrency: 3 });
