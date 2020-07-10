@@ -16,7 +16,7 @@ export class PGraph {
   /**
    * Runs the promise graph
    */
-  run() {
+  run(options?: { concurrency: number }) {
     const scopedPromises = [...this.graph.keys()].map((id) => this.execute(id));
 
     return Promise.all(scopedPromises);

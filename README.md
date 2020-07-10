@@ -28,7 +28,7 @@ const graph = [
   [putOnShorts, putOnShoes],
 ];
 
-await pGraph(graph, { concurrency: 3 }).run(); // returns a promise that will resolve when all the tasks are done from this graph in order
+await pGraph(graph).run({ concurrency: 3 }); // returns a promise that will resolve when all the tasks are done from this graph in order
 ```
 
 ### Ways to define a graph

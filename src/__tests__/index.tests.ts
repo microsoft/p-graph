@@ -195,4 +195,30 @@ describe("Public API", () => {
     // B and C should run concurrently
     expect(computeMaxConcurrency(functionScheduler.callRecords)).toEqual(2);
   });
+
+  it("should not exceed maximum concurrency", async () => {
+    const functionScheduler = new FunctionScheduler();
+
+    const funcs = new Map();
+
+    funcs.set("A", defineMockFunction({ name: "A", duration: 1 }, functionScheduler));
+    funcs.set("B", defineMockFunction({ name: "B", duration: 1 }, functionScheduler));
+    funcs.set("C", defineMockFunction({ name: "C", duration: 1 }, functionScheduler));
+    funcs.set("D", defineMockFunction({ name: "D", duration: 1 }, functionScheduler));
+    funcs.set("E", defineMockFunction({ name: "E", duration: 1 }, functionScheduler));
+
+    //    A
+    // B C D E
+    const graph: DepGraphArray = [
+      ["B", "A"],
+      ["C", "A"],
+      ["D", "A"],
+      ["E", "A"],
+    ];
+
+    await pGraph(funcs, graph).run({ concurrency: 3 });
+
+    // B and C should run concurrently
+    expect(computeMaxConcurrency(functionScheduler.callRecords)).toBeLessThanOrEqual(3);
+  });
 });
