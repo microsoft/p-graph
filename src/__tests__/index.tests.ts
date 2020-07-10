@@ -1,5 +1,6 @@
 import pGraph from "../index";
 import { DepGraphArray } from "../types";
+import { PGraph } from "../PGraph";
 
 const gettingDressedTestFunctions = () => {
   const calls = [];
@@ -56,19 +57,28 @@ describe("Public API", () => {
     ensureValidGettingDressedOrder(calls);
   });
 
-  it("should accept an array dep graph", async () => {
-    const { calls, putOnJacket, putOnShirt, putOnShoes, putOnShorts, tieShoes } = gettingDressedTestFunctions();
+  it("should accept a dependency array with a list of named functions", async () => {
+    // This is intentionally not destructuring to make sure we don't accidentally forget the quotes for function naming
+    const testFunctions = gettingDressedTestFunctions();
+
+    const funcs = new Map();
+
+    funcs.set("putOnShirt", testFunctions.putOnShirt);
+    funcs.set("putOnShorts", testFunctions.putOnShorts);
+    funcs.set("putOnJacket", testFunctions.putOnJacket);
+    funcs.set("putOnShoes", testFunctions.putOnShoes);
+    funcs.set("tieShoes", testFunctions.tieShoes);
 
     const graph: DepGraphArray = [
-      [putOnShoes, tieShoes],
-      [putOnShirt, putOnJacket],
-      [putOnShorts, putOnJacket],
-      [putOnShorts, putOnShoes],
+      ["putOnShoes", "tieShoes"],
+      ["putOnShirt", "putOnJacket"],
+      ["putOnShorts", "putOnJacket"],
+      ["putOnShorts", "putOnShoes"],
     ];
 
-    await pGraph(graph).run();
+    await pGraph(funcs, graph).run();
 
-    ensureValidGettingDressedOrder(calls);
+    ensureValidGettingDressedOrder(testFunctions.calls);
   });
 
   it("should accept a dependency map with a list of named functions", async () => {
@@ -90,6 +100,8 @@ describe("Public API", () => {
     depMap.set("putOnShoes", new Set(["putOnShorts"]));
     depMap.set("putOnShorts", new Set());
     depMap.set("putOnShirt", new Set());
+
+    await pGraph(funcs, depMap).run();
 
     ensureValidGettingDressedOrder(testFunctions.calls);
   });

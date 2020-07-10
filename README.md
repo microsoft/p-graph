@@ -64,13 +64,13 @@ funcs.set("putOnShoes", () => Promise.resolve("put on your shoes"));
 funcs.set("tieShoes", () => Promise.resolve("tie your shoes"));
 
 const graph = [
-  [putOnShoes, tieShoes],
-  [putOnShirt, putOnJacket],
-  [putOnShorts, putOnJacket],
-  [putOnShorts, putOnShoes],
+  ["putOnShoes", "tieShoes"],
+  ["putOnShirt", "putOnJacket"],
+  ["putOnShorts", "putOnJacket"],
+  ["putOnShorts", "putOnShoes"],
 ];
 
-await pGraph(namedFunctions, graph);
+await pGraph(funcs, graph);
 ```
 
 3. Use a dependency map with a list of named functions
@@ -86,13 +86,13 @@ funcs.set("tieShoes", () => Promise.resolve("tie your shoes"));
 
 const depMap = new Map();
 
-depMap.set(tieShoes, new Set([putOnShoes]));
-depMap.set(putOnJacket, new Set([putOnShirt, putOnShorts]));
-depMap.set(putOnShoes, new Set([putOnShorts]));
-depMap.set(putOnShorts, new Set());
-depMap.set(putOnShirt, new Set());
+depMap.set("tieShoes", new Set(["putOnShoes"]));
+depMap.set("putOnJacket", new Set(["putOnShirt", "putOnShorts"]));
+depMap.set("putOnShoes", new Set(["putOnShorts"]));
+depMap.set("putOnShorts", new Set());
+depMap.set("putOnShirt", new Set());
 
-await pGraph(namedFunctions, graph);
+await pGraph(funcs, depMap);
 ```
 
 ### Using the ID as argument to the same function
