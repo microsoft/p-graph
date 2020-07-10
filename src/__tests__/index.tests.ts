@@ -67,6 +67,27 @@ function defineMockFunction(definition: MockFunctionDefinition, functionSchedule
   return () => functionScheduler.startExecutingFunction(definition);
 }
 
+const expectScheduledBefore = (callRecords: MockFunctionCallRecord[], firstTaskName: string, secondTaskName: string) => {
+  const firstIndex = callRecords.findIndex((item) => item.name === firstTaskName && item.state === "end");
+  const secondIndex = callRecords.findIndex((item) => item.name === secondTaskName && item.state === "start");
+
+  expect(firstIndex).not.toEqual(-1);
+  expect(secondIndex).not.toEqual(-1);
+  expect(secondIndex).toBeGreaterThan(firstIndex);
+};
+
+const computeMaxConcurrency = (callRecords: MockFunctionCallRecord[]) => {
+  let currentConcurrency = 0;
+  let maxConcurrencySoFar = 0;
+
+  callRecords.forEach((record) => {
+    currentConcurrency += record.state === "start" ? 1 : -1;
+    maxConcurrencySoFar = Math.max(currentConcurrency, maxConcurrencySoFar);
+  });
+
+  return maxConcurrencySoFar;
+};
+
 const gettingDressedTestFunctions = () => {
   const functionScheduler = new FunctionScheduler();
 
@@ -79,15 +100,6 @@ const gettingDressedTestFunctions = () => {
     putOnShoes: defineMockFunction({ name: "putOnShoes", duration: 1 }, functionScheduler),
     tieShoes: defineMockFunction({ name: "tieShoes", duration: 1 }, functionScheduler),
   };
-};
-
-const expectScheduledBefore = (callRecords: MockFunctionCallRecord[], firstTaskName: string, secondTaskName: string) => {
-  const firstIndex = callRecords.findIndex((item) => item.name === firstTaskName && item.state === "end");
-  const secondIndex = callRecords.findIndex((item) => item.name === secondTaskName && item.state === "start");
-
-  expect(firstIndex).not.toEqual(-1);
-  expect(secondIndex).not.toEqual(-1);
-  expect(secondIndex).toBeGreaterThan(firstIndex);
 };
 
 const ensureValidGettingDressedOrder = (callRecords: MockFunctionCallRecord[]) => {
@@ -160,5 +172,29 @@ describe("Public API", () => {
     await pGraph(funcs, depMap).run();
 
     ensureValidGettingDressedOrder(testFunctions.callRecords);
+  });
+
+  it("should be able to run more than one task at a time", async () => {
+    const functionScheduler = new FunctionScheduler();
+
+    const funcs = new Map();
+
+    funcs.set("A", defineMockFunction({ name: "A", duration: 1 }, functionScheduler));
+    funcs.set("B", defineMockFunction({ name: "B", duration: 1 }, functionScheduler));
+    funcs.set("C", defineMockFunction({ name: "C", duration: 1 }, functionScheduler));
+
+    //  A
+    // B C
+    const graph: DepGraphArray = [
+      ["B", "A"],
+      ["C", "A"],
+    ];
+
+    await pGraph(funcs, graph).run();
+
+    console.log(functionScheduler.callRecords);
+
+    // B and C should run concurrently
+    expect(computeMaxConcurrency(functionScheduler.callRecords)).toEqual(2);
   });
 });
