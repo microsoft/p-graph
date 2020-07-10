@@ -117,19 +117,6 @@ funcs.set("putOnShoes", thatImportantTask);
 funcs.set("tieShoes", thatImportantTask);
 ```
 
-## Scopes and filtering
-
-After a graph are sent to the `pGraph` function, the graph is executed with the `run()` function. The `run()` takes in an argument that lets you filter which tasks to end. This allows you to run tasks up to a certain point in the graph.
-
-```js
-// graph is one of the three options up top
-// depMap is the dependency map where the key is the ID for the Run Function
-//   - the ID CAN be the Run Function itself if graph is specified as the dependency array format
-await pGraph(graph).run((depMap) => {
-  return [...depMap.keys()].filter((id) => id.startsWith("b"));
-});
-```
-
 # Contributing
 
 This project welcomes contributions and suggestions. Most contributions require you to agree to a

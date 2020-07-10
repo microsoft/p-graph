@@ -1,4 +1,4 @@
-import { NamedFunctions, DepGraphMap, ScopeFunction, Id } from "./types";
+import { NamedFunctions, DepGraphMap, Id } from "./types";
 
 export class PGraph {
   private promises: Map<Id, Promise<unknown>> = new Map();
@@ -14,13 +14,10 @@ export class PGraph {
   }
 
   /**
-   * Runs the promise graph with scoping
-   * @param scope
+   * Runs the promise graph
    */
-  run(scope?: ScopeFunction) {
-    const scopedPromises = scope
-      ? scope(this.graph).map((id) => this.execute(id))
-      : [...this.graph.keys()].map((id) => this.execute(id));
+  run() {
+    const scopedPromises = [...this.graph.keys()].map((id) => this.execute(id));
 
     return Promise.all(scopedPromises);
   }
@@ -35,9 +32,7 @@ export class PGraph {
     const deps = this.graph.get(id);
 
     if (deps) {
-      execPromise = execPromise.then(() =>
-        Promise.all([...deps].map((depId) => this.execute(depId)))
-      );
+      execPromise = execPromise.then(() => Promise.all([...deps].map((depId) => this.execute(depId))));
     }
 
     execPromise = execPromise.then(() => this.namedFunctions.get(id)(id));

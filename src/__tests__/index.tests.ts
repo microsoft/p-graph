@@ -192,8 +192,6 @@ describe("Public API", () => {
 
     await pGraph(funcs, graph).run();
 
-    console.log(functionScheduler.callRecords);
-
     // B and C should run concurrently
     expect(computeMaxConcurrency(functionScheduler.callRecords)).toEqual(2);
   });
