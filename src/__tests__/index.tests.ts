@@ -1,6 +1,5 @@
 import pGraph from "../index";
 import { DepGraphArray } from "../types";
-import { PGraph } from "../PGraph";
 
 const gettingDressedTestFunctions = () => {
   const calls = [];
