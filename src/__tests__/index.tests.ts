@@ -1,5 +1,5 @@
 import pGraph from "../index";
-import { DepGraphArray } from "../types";
+import { PGraphNodeMap, PGraphNode, DependencyList } from "../types";
 
 interface MockFunctionDefinition {
   /** A friendly name for the function */
@@ -63,18 +63,34 @@ class FunctionScheduler {
   }
 }
 
-function defineMockFunction(definition: MockFunctionDefinition, functionScheduler: FunctionScheduler): () => Promise<unknown> {
-  return () => functionScheduler.startExecutingFunction(definition);
+function defineMockNode(definition: MockFunctionDefinition, functionScheduler: FunctionScheduler): [string, PGraphNode] {
+  return [definition.name, { run: () => functionScheduler.startExecutingFunction(definition) }];
 }
 
-const expectScheduledBefore = (callRecords: MockFunctionCallRecord[], firstTaskName: string, secondTaskName: string) => {
-  const firstIndex = callRecords.findIndex((item) => item.name === firstTaskName && item.state === "end");
-  const secondIndex = callRecords.findIndex((item) => item.name === secondTaskName && item.state === "start");
+declare global {
+  namespace jest {
+    interface Matchers<R> {
+      /**
+       * Enforces that a particular schedule does not schedule secondTaskName until firstTaskName is complete
+       */
+      toHaveScheduleOrdering(firstTaskName: string, secondTaskName: string): R;
+    }
+  }
+}
 
-  expect(firstIndex).not.toEqual(-1);
-  expect(secondIndex).not.toEqual(-1);
-  expect(secondIndex).toBeGreaterThan(firstIndex);
-};
+expect.extend({
+  toHaveScheduleOrdering(callRecords: MockFunctionCallRecord[], firstTaskName: string, secondTaskName: string) {
+    const firstIndex = callRecords.findIndex((item) => item.name === firstTaskName && item.state === "end");
+    const secondIndex = callRecords.findIndex((item) => item.name === secondTaskName && item.state === "start");
+
+    const pass = firstIndex !== -1 && secondIndex !== -1 && firstIndex < secondIndex;
+
+    return {
+      message: () => `expected ${secondTaskName} to be scheduled after ${firstTaskName}`,
+      pass,
+    };
+  },
+});
 
 const computeMaxConcurrency = (callRecords: MockFunctionCallRecord[]) => {
   let currentConcurrency = 0;
@@ -88,109 +104,66 @@ const computeMaxConcurrency = (callRecords: MockFunctionCallRecord[]) => {
   return maxConcurrencySoFar;
 };
 
-const gettingDressedTestFunctions = () => {
-  const functionScheduler = new FunctionScheduler();
-
-  return {
-    callRecords: functionScheduler.callRecords,
-    // Example graph from: https://www.npmjs.com/package/toposort
-    putOnShirt: defineMockFunction({ name: "putOnShirt", duration: 1 }, functionScheduler),
-    putOnShorts: defineMockFunction({ name: "putOnShorts", duration: 1 }, functionScheduler),
-    putOnJacket: defineMockFunction({ name: "putOnJacket", duration: 1 }, functionScheduler),
-    putOnShoes: defineMockFunction({ name: "putOnShoes", duration: 1 }, functionScheduler),
-    tieShoes: defineMockFunction({ name: "tieShoes", duration: 1 }, functionScheduler),
-  };
-};
-
-const ensureValidGettingDressedOrder = (callRecords: MockFunctionCallRecord[]) => {
-  expectScheduledBefore(callRecords, "putOnShoes", "tieShoes");
-  expectScheduledBefore(callRecords, "putOnShirt", "putOnJacket");
-  expectScheduledBefore(callRecords, "putOnShorts", "putOnJacket");
-  expectScheduledBefore(callRecords, "putOnShorts", "putOnShoes");
-};
-
 describe("Public API", () => {
-  it("should accept an array dep graph", async () => {
-    const { callRecords, putOnJacket, putOnShirt, putOnShoes, putOnShorts, tieShoes } = gettingDressedTestFunctions();
+  it("should accept the dependency graph and execute tasks in order", async () => {
+    const functionScheduler = new FunctionScheduler();
 
-    const graph: DepGraphArray = [
-      [putOnShoes, tieShoes],
-      [putOnShirt, putOnJacket],
-      [putOnShorts, putOnJacket],
-      [putOnShorts, putOnShoes],
-    ];
+    const nodeMap: PGraphNodeMap = new Map([
+      defineMockNode({ name: "putOnShirt", duration: 1 }, functionScheduler),
+      defineMockNode({ name: "putOnShorts", duration: 1 }, functionScheduler),
+      defineMockNode({ name: "putOnJacket", duration: 1 }, functionScheduler),
+      defineMockNode({ name: "putOnShoes", duration: 1 }, functionScheduler),
+      defineMockNode({ name: "tieShoes", duration: 1 }, functionScheduler),
+    ]);
 
-    await pGraph(graph).run();
-
-    ensureValidGettingDressedOrder(callRecords);
-  });
-
-  it("should accept a dependency array with a list of named functions", async () => {
-    // This is intentionally not destructuring to make sure we don't accidentally forget the quotes for function naming
-    const testFunctions = gettingDressedTestFunctions();
-
-    const funcs = new Map();
-
-    funcs.set("putOnShirt", testFunctions.putOnShirt);
-    funcs.set("putOnShorts", testFunctions.putOnShorts);
-    funcs.set("putOnJacket", testFunctions.putOnJacket);
-    funcs.set("putOnShoes", testFunctions.putOnShoes);
-    funcs.set("tieShoes", testFunctions.tieShoes);
-
-    const graph: DepGraphArray = [
+    const dependencies: DependencyList = [
       ["putOnShoes", "tieShoes"],
       ["putOnShirt", "putOnJacket"],
       ["putOnShorts", "putOnJacket"],
       ["putOnShorts", "putOnShoes"],
     ];
 
-    await pGraph(funcs, graph).run();
+    await pGraph(nodeMap, dependencies).run();
 
-    ensureValidGettingDressedOrder(testFunctions.callRecords);
+    const { callRecords } = functionScheduler;
+    expect(callRecords).toHaveScheduleOrdering("putOnShoes", "tieShoes");
+    expect(callRecords).toHaveScheduleOrdering("putOnShirt", "putOnJacket");
+    expect(callRecords).toHaveScheduleOrdering("putOnShorts", "putOnJacket");
+    expect(callRecords).toHaveScheduleOrdering("putOnShorts", "putOnShoes");
   });
 
-  it("should accept a dependency map with a list of named functions", async () => {
-    // This is intentionally not destructuring to make sure we don't accidentally forget the quotes for function naming
-    const testFunctions = gettingDressedTestFunctions();
+  it("throws an exception when run is invoked and a task rejects its promise", async () => {
+    const nodeMap: PGraphNodeMap = new Map([
+      ["A", { run: () => Promise.resolve() }],
+      ["B", { run: () => Promise.resolve() }],
+      ["C", { run: () => Promise.reject("C rejected") }],
+    ]);
 
-    const funcs = new Map();
+    const dependencies: DependencyList = [
+      ["B", "A"],
+      ["C", "A"],
+    ];
 
-    funcs.set("putOnShirt", testFunctions.putOnShirt);
-    funcs.set("putOnShorts", testFunctions.putOnShorts);
-    funcs.set("putOnJacket", testFunctions.putOnJacket);
-    funcs.set("putOnShoes", testFunctions.putOnShoes);
-    funcs.set("tieShoes", testFunctions.tieShoes);
-
-    const depMap = new Map();
-
-    depMap.set("tieShoes", new Set(["putOnShoes"]));
-    depMap.set("putOnJacket", new Set(["putOnShirt", "putOnShorts"]));
-    depMap.set("putOnShoes", new Set(["putOnShorts"]));
-    depMap.set("putOnShorts", new Set());
-    depMap.set("putOnShirt", new Set());
-
-    await pGraph(funcs, depMap).run();
-
-    ensureValidGettingDressedOrder(testFunctions.callRecords);
+    await expect(pGraph(nodeMap, dependencies).run()).rejects.toEqual("C rejected");
   });
 
   it("should be able to run more than one task at a time", async () => {
     const functionScheduler = new FunctionScheduler();
 
-    const funcs = new Map();
-
-    funcs.set("A", defineMockFunction({ name: "A", duration: 1 }, functionScheduler));
-    funcs.set("B", defineMockFunction({ name: "B", duration: 1 }, functionScheduler));
-    funcs.set("C", defineMockFunction({ name: "C", duration: 1 }, functionScheduler));
+    const nodeMap: PGraphNodeMap = new Map([
+      defineMockNode({ name: "A", duration: 1 }, functionScheduler),
+      defineMockNode({ name: "B", duration: 1 }, functionScheduler),
+      defineMockNode({ name: "C", duration: 1 }, functionScheduler),
+    ]);
 
     //  A
     // B C
-    const graph: DepGraphArray = [
+    const dependencies: DependencyList = [
       ["B", "A"],
       ["C", "A"],
     ];
 
-    await pGraph(funcs, graph).run();
+    await pGraph(nodeMap, dependencies).run();
 
     // B and C should run concurrently
     expect(computeMaxConcurrency(functionScheduler.callRecords)).toEqual(2);
@@ -199,24 +172,24 @@ describe("Public API", () => {
   it("should not exceed maximum concurrency", async () => {
     const functionScheduler = new FunctionScheduler();
 
-    const funcs = new Map();
-
-    funcs.set("A", defineMockFunction({ name: "A", duration: 1 }, functionScheduler));
-    funcs.set("B", defineMockFunction({ name: "B", duration: 1 }, functionScheduler));
-    funcs.set("C", defineMockFunction({ name: "C", duration: 1 }, functionScheduler));
-    funcs.set("D", defineMockFunction({ name: "D", duration: 1 }, functionScheduler));
-    funcs.set("E", defineMockFunction({ name: "E", duration: 1 }, functionScheduler));
+    const funcs = new Map([
+      defineMockNode({ name: "A", duration: 1 }, functionScheduler),
+      defineMockNode({ name: "B", duration: 1 }, functionScheduler),
+      defineMockNode({ name: "C", duration: 1 }, functionScheduler),
+      defineMockNode({ name: "D", duration: 1 }, functionScheduler),
+      defineMockNode({ name: "E", duration: 1 }, functionScheduler),
+    ]);
 
     //    A
     // B C D E
-    const graph: DepGraphArray = [
+    const dependencies: DependencyList = [
       ["B", "A"],
       ["C", "A"],
       ["D", "A"],
       ["E", "A"],
     ];
 
-    await pGraph(funcs, graph).run({ concurrency: 3 });
+    await pGraph(funcs, dependencies).run({ maxConcurrency: 3 });
 
     // B and C should run concurrently
     expect(computeMaxConcurrency(functionScheduler.callRecords)).toBeLessThanOrEqual(3);

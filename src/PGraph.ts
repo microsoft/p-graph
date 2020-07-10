@@ -1,43 +1,36 @@
-import { NamedFunctions, DepGraphMap, Id } from "./types";
+import { FullDependencyMap, RunOptions, PGraphNodeMap } from "./types";
 
 export class PGraph {
-  private promises: Map<Id, Promise<unknown>> = new Map();
+  // Map of promise name to it's function
+  private promises: Map<string, Promise<unknown>> = new Map();
 
-  namedFunctions: NamedFunctions;
-  graph: DepGraphMap;
-
-  constructor(namedFunctions, graph: DepGraphMap) {
-    this.namedFunctions = namedFunctions;
-    this.graph = graph;
-
+  constructor(private readonly nodeMap: PGraphNodeMap, private readonly dependencyGraph: FullDependencyMap) {
     this.promises = new Map();
   }
 
   /**
    * Runs the promise graph
    */
-  run(options?: { concurrency: number }) {
-    const scopedPromises = [...this.graph.keys()].map((id) => this.execute(id));
-
-    return Promise.all(scopedPromises);
+  run(options?: RunOptions) {
+    return Promise.all([...this.dependencyGraph.keys()].map((name) => this.execute(name)));
   }
 
-  private execute(id: Id) {
-    if (this.promises.has(id)) {
-      return this.promises.get(id);
+  private execute(name: string) {
+    if (this.promises.has(name)) {
+      return this.promises.get(name);
     }
 
     let execPromise: Promise<unknown> = Promise.resolve();
 
-    const deps = this.graph.get(id);
+    const deps = this.dependencyGraph.get(name);
 
     if (deps) {
       execPromise = execPromise.then(() => Promise.all([...deps].map((depId) => this.execute(depId))));
     }
 
-    execPromise = execPromise.then(() => this.namedFunctions.get(id)(id));
+    execPromise = execPromise.then(() => this.nodeMap.get(name)?.run());
 
-    this.promises.set(id, execPromise);
+    this.promises.set(name, execPromise);
 
     return execPromise;
   }
