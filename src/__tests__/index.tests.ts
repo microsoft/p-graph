@@ -1,36 +1,49 @@
 import pGraph from "../index";
 import { DepGraphArray } from "../types";
 
+const gettingDressedTestFunctions = () => {
+  const calls = [];
+
+  return {
+    calls,
+    // Example graph from: https://www.npmjs.com/package/toposort
+    putOnShirt: () =>
+      Promise.resolve("put on your shirt").then((v) => {
+        calls.push(v);
+      }),
+    putOnShorts: () =>
+      Promise.resolve("put on your shorts").then((v) => {
+        calls.push(v);
+      }),
+    putOnJacket: () =>
+      Promise.resolve("put on your jacket").then((v) => {
+        calls.push(v);
+      }),
+    putOnShoes: () =>
+      Promise.resolve("put on your shoes").then((v) => {
+        calls.push(v);
+      }),
+    tieShoes: () =>
+      Promise.resolve("tie your shoes").then((v) => {
+        calls.push(v);
+      }),
+  };
+};
+
+const ensureValidGettingDressedOrder = (calls: string[]) => {
+  expect(calls.indexOf("tie your shoes")).toBeGreaterThan(calls.indexOf("put on your shoes"));
+
+  expect(calls.indexOf("put on your jacket")).toBeGreaterThan(calls.indexOf("put on your shirt"));
+
+  expect(calls.indexOf("put on your jacket")).toBeGreaterThan(calls.indexOf("put on your shorts"));
+
+  expect(calls.indexOf("put on your shoes")).toBeGreaterThan(calls.indexOf("put on your shorts"));
+};
+
 describe("Public API", () => {
-  let calls = [];
-
-  // Example graph from: https://www.npmjs.com/package/toposort
-  const putOnShirt = () =>
-    Promise.resolve("put on your shirt").then((v) => {
-      calls.push(v);
-    });
-  const putOnShorts = () =>
-    Promise.resolve("put on your shorts").then((v) => {
-      calls.push(v);
-    });
-  const putOnJacket = () =>
-    Promise.resolve("put on your jacket").then((v) => {
-      calls.push(v);
-    });
-  const putOnShoes = () =>
-    Promise.resolve("put on your shoes").then((v) => {
-      calls.push(v);
-    });
-  const tieShoes = () =>
-    Promise.resolve("tie your shoes").then((v) => {
-      calls.push(v);
-    });
-
-  beforeEach(() => {
-    calls = [];
-  });
-
   it("should accept an array dep graph", async () => {
+    const { calls, putOnJacket, putOnShirt, putOnShoes, putOnShorts, tieShoes } = gettingDressedTestFunctions();
+
     const graph: DepGraphArray = [
       [putOnShoes, tieShoes],
       [putOnShirt, putOnJacket],
@@ -40,16 +53,12 @@ describe("Public API", () => {
 
     await pGraph(graph).run();
 
-    expect(calls).toEqual([
-      "put on your shirt",
-      "put on your shorts",
-      "put on your jacket",
-      "put on your shoes",
-      "tie your shoes",
-    ]);
+    ensureValidGettingDressedOrder(calls);
   });
 
   it("should accept an array dep graph", async () => {
+    const { calls, putOnJacket, putOnShirt, putOnShoes, putOnShorts, tieShoes } = gettingDressedTestFunctions();
+
     const graph: DepGraphArray = [
       [putOnShoes, tieShoes],
       [putOnShirt, putOnJacket],
@@ -59,20 +68,29 @@ describe("Public API", () => {
 
     await pGraph(graph).run();
 
-    expect(calls.indexOf("tie your shoes")).toBeGreaterThan(
-      calls.indexOf("put on your shoes")
-    );
+    ensureValidGettingDressedOrder(calls);
+  });
 
-    expect(calls.indexOf("put on your jacket")).toBeGreaterThan(
-      calls.indexOf("put on your shirt")
-    );
+  it("should accept a dependency map with a list of named functions", async () => {
+    // This is intentionally not destructuring to make sure we don't accidentally forget the quotes for function naming
+    const testFunctions = gettingDressedTestFunctions();
 
-    expect(calls.indexOf("put on your jacket")).toBeGreaterThan(
-      calls.indexOf("put on your shorts")
-    );
+    const funcs = new Map();
 
-    expect(calls.indexOf("put on your shoes")).toBeGreaterThan(
-      calls.indexOf("put on your shorts")
-    );
+    funcs.set("putOnShirt", testFunctions.putOnShirt);
+    funcs.set("putOnShorts", testFunctions.putOnShorts);
+    funcs.set("putOnJacket", testFunctions.putOnJacket);
+    funcs.set("putOnShoes", testFunctions.putOnShoes);
+    funcs.set("tieShoes", testFunctions.tieShoes);
+
+    const depMap = new Map();
+
+    depMap.set("tieShoes", new Set(["putOnShoes"]));
+    depMap.set("putOnJacket", new Set(["putOnShirt", "putOnShorts"]));
+    depMap.set("putOnShoes", new Set(["putOnShorts"]));
+    depMap.set("putOnShorts", new Set());
+    depMap.set("putOnShirt", new Set());
+
+    ensureValidGettingDressedOrder(testFunctions.calls);
   });
 });
