@@ -154,7 +154,7 @@ describe("Public API", () => {
     expect(callRecords).toHaveScheduleOrdering("putOnShorts", "putOnShoes");
   });
 
-  it("throws an exception when the dependency graph has a cycle", async () => {
+  it("throws an exception when the dependency graph is a cycle", async () => {
     const nodeMap: PGraphNodeMap = new Map([
       ["A", { run: () => Promise.resolve() }],
       ["B", { run: () => Promise.resolve() }],
@@ -167,7 +167,34 @@ describe("Public API", () => {
       ["C", "A"],
     ];
 
-    await expect(pGraph(nodeMap, dependencies).run()).rejects.toBeTruthy();
+    expect(() => pGraph(nodeMap, dependencies)).toThrow();
+  });
+
+  it("throws an exception when the dependency graph has a cycle", async () => {
+    // This is almost the same as the last test, except the root node is not a part of the cycle
+    const nodeMap: PGraphNodeMap = new Map([
+      ["A", { run: () => Promise.resolve() }],
+      ["B", { run: () => Promise.resolve() }],
+      ["C", { run: () => Promise.resolve() }],
+      ["D", { run: () => Promise.resolve() }],
+    ]);
+
+    const dependencies: DependencyList = [
+      ["A", "B"],
+      ["B", "C"],
+      ["C", "D"],
+      ["D", "B"],
+    ];
+
+    expect(() => pGraph(nodeMap, dependencies)).toThrow();
+  });
+
+  it("resolves an empty dependnecy graph", async () => {
+    const nodeMap: PGraphNodeMap = new Map();
+
+    const dependencies: DependencyList = [];
+
+    expect(pGraph(nodeMap, dependencies).run()).resolves.toBeUndefined();
   });
 
   it("throws an exception when run is invoked and a task rejects its promise", async () => {

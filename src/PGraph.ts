@@ -37,6 +37,10 @@ export class PGraph {
 
     this.nodesWithNoDependencies = getNodesWithNoDependencies(this.pGraphDependencyMap);
 
+    if (this.nodesWithNoDependencies.length == 0 && nodeMap.size > 0) {
+      throw new Error("We could not find a node in the graph with no dependencies, this likely means there is a cycle including all nodes");
+    }
+
     if (graphHasCycles(this.pGraphDependencyMap, this.nodesWithNoDependencies)) {
       throw new Error("The dependency graph has a cycle in it");
     }
