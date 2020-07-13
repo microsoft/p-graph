@@ -20,8 +20,16 @@ export class PGraph {
     });
 
     dependencies.forEach(([subjectId, dependentId]) => {
-      const subjectNode = this.pGraphDependencyMap.get(subjectId)!;
-      const dependentNode = this.pGraphDependencyMap.get(dependentId)!;
+      const subjectNode = this.pGraphDependencyMap.get(subjectId);
+      const dependentNode = this.pGraphDependencyMap.get(dependentId);
+
+      if (!subjectNode) {
+        throw new Error(`Dependency graph referenced node with id ${subjectId}, which was not in the node list`);
+      }
+
+      if (!dependentNode) {
+        throw new Error(`Dependency graph referenced node with id ${dependentId}, which was not in the node list`);
+      }
 
       subjectNode.dependedOnBy.add(dependentId);
       dependentNode.dependsOn.add(subjectId);

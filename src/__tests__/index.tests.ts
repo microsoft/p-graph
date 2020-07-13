@@ -200,7 +200,7 @@ describe("Public API", () => {
       ["A", "C"],
     ];
 
-    await expect(pGraph(nodeMap, dependencies).run()).rejects.toEqual("C rejected");
+    expect(() => pGraph(nodeMap, dependencies)).toThrow();
   });
 
   it("should run all dependencies for disconnected graphs", async () => {
