@@ -23,11 +23,6 @@ export type PGraphNodeMap = Map<string, PGraphNode>;
 export type DependencyList = [string, string][];
 
 /**
- * A map that maps a node id to the id of all the nodes that depend on that node.
- */
-export type FullDependencyMap = Map<string, Set<string>>;
-
-/**
  * The optional arguments to pass to the run function
  */
 export interface RunOptions {

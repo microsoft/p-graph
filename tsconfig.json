@@ -8,7 +8,8 @@
     "allowSyntheticDefaultImports": true,
     "lib": ["ES2017"],
     "outDir": "lib",
-    "noUnusedLocals": true
+    "noUnusedLocals": true,
+    "strict": true
   },
   "include": ["src"]
 }
