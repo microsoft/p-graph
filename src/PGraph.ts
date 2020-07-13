@@ -1,4 +1,5 @@
 import { RunOptions, PGraphNodeMap, DependencyList, PGraphNode } from "./types";
+import { PriorityQueue } from "./PriorityQueue";
 
 interface PGraphNodeWithDependencies extends PGraphNode {
   dependsOn: Set<string>;
@@ -57,10 +58,15 @@ export class PGraph {
       throw new Error(`maxConcurrency must be either undefined or a positive integer, received ${options?.maxConcurrency}`);
     }
 
+    const nodeCumulativePriorities = getNodeCumulativePriorities(this.pGraphDependencyMap, this.nodesWithNoDependencies);
+    const priorityQueue = new PriorityQueue<string>();
+
+    this.nodesWithNoDependencies.forEach((itemId) => priorityQueue.insert(itemId, nodeCumulativePriorities.get(itemId)!));
+
     let currentlyRunningTaskCount = 0;
 
     const scheduleTask = async () => {
-      const taskToRunId = this.nodesWithNoDependencies.pop();
+      const taskToRunId = priorityQueue.removeMax();
 
       if (!taskToRunId) {
         throw new Error("Tried to schedule a task when there were no pending tasks!");
@@ -80,20 +86,20 @@ export class PGraph {
 
         // If the task that just completed was the last remaining dependency for a node, add it to the set of unblocked nodes
         if (dependentNode.dependsOn.size === 0) {
-          this.nodesWithNoDependencies.push(dependentId);
+          priorityQueue.insert(dependentId, nodeCumulativePriorities.get(dependentId)!);
         }
       });
     };
 
     return new Promise((resolve, reject) => {
       const trySchedulingTasks = () => {
-        if (this.nodesWithNoDependencies.length == 0 && currentlyRunningTaskCount === 0) {
+        if (priorityQueue.isEmpty() && currentlyRunningTaskCount === 0) {
           // We are done running all tasks, let's resolve the promise done
           resolve();
           return;
         }
 
-        while (this.nodesWithNoDependencies.length > 0 && (maxConcurrency === undefined || currentlyRunningTaskCount < maxConcurrency)) {
+        while (!priorityQueue.isEmpty() && (maxConcurrency === undefined || currentlyRunningTaskCount < maxConcurrency)) {
           scheduleTask()
             .then(() => trySchedulingTasks())
             .catch((e) => reject(e));
@@ -152,4 +158,35 @@ function graphHasCycles(pGraphDependencyMap: Map<string, PGraphNodeWithDependenc
   }
 
   return false;
+}
+
+function getNodeCumulativePriorities(
+  pGraphDependencyMap: Map<string, PGraphNodeWithDependencies>,
+  nodesWithNoDependencies: string[]
+): Map<string, number> {
+  const nodeCumulativePriorities = new Map<string, number>();
+
+  const getNodeCumulativePrioritiesInternal = (currentNodeId: string): number => {
+    const maybeComputedPriority = nodeCumulativePriorities.get(currentNodeId);
+    if (maybeComputedPriority !== undefined) {
+      return maybeComputedPriority;
+    }
+
+    const node = pGraphDependencyMap.get(currentNodeId)!;
+    // The default priority for a node is zero
+    const currentNodePriority = node.priority || 0;
+
+    const maxChildCumulativePriority = Math.max(
+      ...[...node.dependedOnBy.keys()].map((childId) => getNodeCumulativePrioritiesInternal(childId)),
+      0
+    );
+
+    const result = currentNodePriority + maxChildCumulativePriority;
+    nodeCumulativePriorities.set(currentNodeId, result);
+    return result;
+  };
+
+  nodesWithNoDependencies.forEach((nodeId) => getNodeCumulativePrioritiesInternal(nodeId));
+
+  return nodeCumulativePriorities;
 }

@@ -311,8 +311,8 @@ describe("Public API", () => {
       defineMockNode({ name: "B", duration: 1 }, functionScheduler),
       defineMockNode({ name: "C", duration: 1 }, functionScheduler),
       defineMockNode({ name: "D", duration: 1 }, functionScheduler),
-      defineMockNode({ name: "E", duration: 1, priority: 16 }, functionScheduler),
-      defineMockNode({ name: "F", duration: 1 }, functionScheduler),
+      defineMockNode({ name: "E", duration: 1 }, functionScheduler),
+      defineMockNode({ name: "F", duration: 1, priority: 16 }, functionScheduler),
     ]);
 
     //      A
@@ -326,7 +326,8 @@ describe("Public API", () => {
       ["C", "F"],
     ];
 
-    await pGraph(funcs, dependencies).run();
+    // Set concurrency to 1 to make it easier to validate execution order
+    await pGraph(funcs, dependencies).run({ maxConcurrency: 1 });
 
     // A -> C -> F is the critical path, it should be built first
     expect(functionScheduler.callRecords).toHaveScheduleOrdering("C", "B");
