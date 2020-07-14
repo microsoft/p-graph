@@ -1,12 +1,7 @@
-import { RunOptions, PGraphNodeMap, DependencyList, PGraphNode } from "./types";
+import { RunOptions, PGraphNodeMap, DependencyList, PGraphNodeWithDependencies } from "./types";
 import { PriorityQueue } from "./PriorityQueue";
-
-interface PGraphNodeWithDependencies extends PGraphNode {
-  dependsOn: Set<string>;
-
-  dependedOnBy: Set<string>;
-}
-
+import { getNodeCumulativePriorities } from "./getNodeCumulativePriorities";
+import { graphHasCycles } from "./graphHasCycles";
 export class PGraph {
   private readonly pGraphDependencyMap = new Map<string, PGraphNodeWithDependencies>();
 
@@ -124,69 +119,4 @@ function getNodesWithNoDependencies(pGraphDependencyMap: Map<string, PGraphNodeW
   });
 
   return result;
-}
-
-function graphHasCycles(pGraphDependencyMap: Map<string, PGraphNodeWithDependencies>, nodesWithNoDependencies: string[]): boolean {
-  const checkForCyclesInternal = (currentNodeId: string, visitedNodes: Set<string>): boolean => {
-    // If we have already seen this node, we've found a cycle
-    if (visitedNodes.has(currentNodeId)) {
-      return true;
-    }
-
-    visitedNodes.add(currentNodeId);
-
-    const node = pGraphDependencyMap.get(currentNodeId)!;
-
-    // If we got to a leaf node, this particular path does not have a cycle
-    if (node.dependedOnBy.size === 0) {
-      return false;
-    }
-
-    for (const childId of node.dependedOnBy.keys()) {
-      if (checkForCyclesInternal(childId, visitedNodes)) {
-        return true;
-      }
-    }
-
-    return false;
-  };
-
-  for (const root of nodesWithNoDependencies) {
-    if (checkForCyclesInternal(root, new Set())) {
-      return true;
-    }
-  }
-
-  return false;
-}
-
-function getNodeCumulativePriorities(
-  pGraphDependencyMap: Map<string, PGraphNodeWithDependencies>,
-  nodesWithNoDependencies: string[]
-): Map<string, number> {
-  const nodeCumulativePriorities = new Map<string, number>();
-
-  const getNodeCumulativePrioritiesInternal = (currentNodeId: string): number => {
-    const maybeComputedPriority = nodeCumulativePriorities.get(currentNodeId);
-    if (maybeComputedPriority !== undefined) {
-      return maybeComputedPriority;
-    }
-
-    const node = pGraphDependencyMap.get(currentNodeId)!;
-    // The default priority for a node is zero
-    const currentNodePriority = node.priority || 0;
-
-    const maxChildCumulativePriority = Math.max(
-      ...[...node.dependedOnBy.keys()].map((childId) => getNodeCumulativePrioritiesInternal(childId)),
-      0
-    );
-
-    const result = currentNodePriority + maxChildCumulativePriority;
-    nodeCumulativePriorities.set(currentNodeId, result);
-    return result;
-  };
-
-  nodesWithNoDependencies.forEach((nodeId) => getNodeCumulativePrioritiesInternal(nodeId));
-
-  return nodeCumulativePriorities;
 }

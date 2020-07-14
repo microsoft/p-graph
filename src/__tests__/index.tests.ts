@@ -171,7 +171,7 @@ describe("Public API", () => {
     expect(callRecords).toHaveScheduleOrdering("putOnShorts", "putOnShoes");
   });
 
-  it("throws an exception when the dependency graph is a cycle", async () => {
+  it("throws an exception when the dependency graph has a cycle starting from the root", async () => {
     const nodeMap: PGraphNodeMap = new Map([
       ["A", { run: () => Promise.resolve() }],
       ["B", { run: () => Promise.resolve() }],
@@ -318,6 +318,37 @@ describe("Public API", () => {
     await pGraph(funcs, dependencies).run({ maxConcurrency: 3 });
 
     expect(computeMaxConcurrency(functionScheduler.callRecords)).toBeLessThanOrEqual(3);
+  });
+
+  it("correctly schedules tasks that have more than one dependency", async () => {
+    const functionScheduler = new FunctionScheduler();
+
+    const funcs = new Map([
+      defineMockNode({ name: "A", duration: 1 }, functionScheduler),
+      defineMockNode({ name: "B", duration: 1 }, functionScheduler),
+      defineMockNode({ name: "C", duration: 1 }, functionScheduler),
+      defineMockNode({ name: "D", duration: 1 }, functionScheduler),
+      defineMockNode({ name: "E", duration: 1 }, functionScheduler),
+    ]);
+
+    // All nodes depend on A, D depends on C and B as well
+    const dependencies: DependencyList = [
+      ["A", "B"],
+      ["A", "C"],
+      ["A", "D"],
+      ["A", "E"],
+      ["C", "D"],
+      ["B", "D"],
+    ];
+
+    await pGraph(funcs, dependencies).run();
+
+    expect(functionScheduler.callRecords).toHaveScheduleOrdering("A", "B");
+    expect(functionScheduler.callRecords).toHaveScheduleOrdering("A", "C");
+    expect(functionScheduler.callRecords).toHaveScheduleOrdering("A", "D");
+    expect(functionScheduler.callRecords).toHaveScheduleOrdering("A", "E");
+    expect(functionScheduler.callRecords).toHaveScheduleOrdering("B", "D");
+    expect(functionScheduler.callRecords).toHaveScheduleOrdering("C", "D");
   });
 
   it("should schedule high priority tasks and dependencies before lower priority tasks", async () => {

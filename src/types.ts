@@ -29,3 +29,18 @@ export interface RunOptions {
   /** The maximum amount of promises that can be executing at the same time */
   maxConcurrency?: number;
 }
+
+/**
+ * An internally used representation of the dependency graph nodes that includes all nodes that this node depends on plus all the nodes that depend on this node.
+ */
+export interface PGraphNodeWithDependencies extends PGraphNode {
+  /**
+   * The set of nodes that this node depends on. This node should not be executed until all the nodes in this list have been executed to completion.
+   */
+  dependsOn: Set<string>;
+
+  /**
+   * The set of nodes that cannot start execution until this node has completed execution.
+   */
+  dependedOnBy: Set<string>;
+}
