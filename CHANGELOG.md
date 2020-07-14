@@ -1,8 +1,16 @@
 # Change Log - p-graph
 
-This log was last generated on Mon, 25 May 2020 21:06:05 GMT and should not be manually modified.
+This log was last generated on Tue, 14 Jul 2020 20:57:54 GMT and should not be manually modified.
 
 <!-- Start content -->
+
+## 1.0.0
+
+Tue, 14 Jul 2020 20:57:54 GMT
+
+### Major changes
+
+- Add support for maxConcurrency and allow for setting execution priorities on functions (1581488+christiango@users.noreply.github.com)
 
 ## 0.4.1
 

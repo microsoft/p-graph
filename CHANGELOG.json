@@ -2,6 +2,21 @@
   "name": "p-graph",
   "entries": [
     {
+      "date": "Tue, 14 Jul 2020 20:57:54 GMT",
+      "tag": "p-graph_v1.0.0",
+      "version": "1.0.0",
+      "comments": {
+        "major": [
+          {
+            "comment": "Add support for maxConcurrency and allow for setting execution priorities on functions",
+            "author": "1581488+christiango@users.noreply.github.com",
+            "commit": "1077e092c27a7cec997f8ff198d868ca02708bb0",
+            "package": "p-graph"
+          }
+        ]
+      }
+    },
+    {
       "date": "Mon, 25 May 2020 21:06:05 GMT",
       "tag": "p-graph_v0.4.1",
       "version": "0.4.1",
