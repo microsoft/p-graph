@@ -12,7 +12,7 @@ $ npm install p-graph
 
 The p-graph library takes in a map of of nodes and a list of dependencies. The keys in the map are unique string identifiers for each node in the graph. The value of the map is the definition of the task, including the function that should be executed by that task in it's run argument. The dependencies list is an array of tuples, each tuple contains the two values that must correspond to ids in the node map. The run function corresponding to the first item in the tuple must complete before the second item in the tuple can begin.
 
-The return value of pGraph is a class with a run object on it. Calling the run function will return a promise that resolves after all the run functions in the graph have finished completed. Tasks are run in an order that respects the dependency graph passed in.
+The return value of pGraph is a class with a `run()` function. Calling the `run()` function will return a promise that resolves after all the tasks in the graph have finished completed. Tasks are run in dependency order.
 
 ```js
 const { default: pGraph } = require("p-graph"); // ES6 import also works: import pGraph from 'p-graph';
