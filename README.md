@@ -46,7 +46,7 @@ await pGraph(graph).run({ concurrency: 3 });
 
 ## Priority
 
-When the concurrency option is set, the task runner must pick a subset of available tasks to put on the queue. By default, tasks are considered to all be equally important and equally likely to be picked to run once all the tasks they depend on are complete. If you wish to control the ordering of tasks, consider using the priority option when defining a task node. When the task scheduler is picking tasks to run, it will favor tasks with a higher priority over tasks with a lower priority. Tasks will always execute in dependency order.
+There are situations where task runner must pick a subset of unblocked tasks to put on the queue at a point in time. By default, tasks are considered to all be equally important and equally likely to be picked to run once all the tasks they depend on are complete. If you wish to control the ordering of tasks, consider using the priority option when defining a task node. When the task scheduler is picking tasks to run, it will favor tasks with a higher priority over tasks with a lower priority. Tasks will always execute in dependency order.
 
 # Contributing
 
