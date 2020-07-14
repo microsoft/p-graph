@@ -2,6 +2,21 @@
   "name": "p-graph",
   "entries": [
     {
+      "date": "Tue, 14 Jul 2020 21:39:50 GMT",
+      "tag": "p-graph_v1.0.1",
+      "version": "1.0.1",
+      "comments": {
+        "patch": [
+          {
+            "comment": "Export types",
+            "author": "1581488+christiango@users.noreply.github.com",
+            "commit": "1348bfa6f87b828f9ad25b33d1b447306e2d1ff2",
+            "package": "p-graph"
+          }
+        ]
+      }
+    },
+    {
       "date": "Tue, 14 Jul 2020 20:57:54 GMT",
       "tag": "p-graph_v1.0.0",
       "version": "1.0.0",
