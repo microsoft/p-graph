@@ -385,8 +385,6 @@ describe("Public API", () => {
     expect(functionScheduler.callRecords).toHaveStartedBefore("C", "B");
     expect(functionScheduler.callRecords).toHaveStartedBefore("C", "D");
     expect(functionScheduler.callRecords).toHaveStartedBefore("B", "D");
-    expect(functionScheduler.callRecords).toHaveStartedBefore("F", "D");
-    expect(functionScheduler.callRecords).toHaveStartedBefore("E", "D");
     expect(functionScheduler.callRecords).toHaveStartedBefore("F", "E");
   });
 });
