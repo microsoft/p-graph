@@ -26,7 +26,7 @@ export type DependencyList = [string, string][];
  * The optional arguments to pass to the run function
  */
 export interface RunOptions {
-  /** The maximum amount of promises that can be executing at the same time */
+  /** The maximum amount of promises that can be executing at the same time. When not provided, we do not limit the number of concurrent tasks and run tasks as soon as they are unblocked */
   concurrency?: number;
 }
 

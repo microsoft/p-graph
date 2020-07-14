@@ -38,7 +38,7 @@ await pGraph(nodeMap, dependencies).run();
 
 ## Concurrency Limiter
 
-There are some contexts where you may want to limit the number of functions running concurrently. One example would be to prevent overloading the CPU with too many parallel tasks. The concurrency argument to `run` will limit the number of functions that start running at a given time
+There are some contexts where you may want to limit the number of functions running concurrently. One example would be to prevent overloading the CPU with too many parallel tasks. The concurrency argument to `run` will limit the number of functions that start running at a given time. If no concurrency option is set, the concurrency is not limited and tasks are run as soon as they are unblocked.
 
 ```js
 await pGraph(graph).run({ concurrency: 3 });
