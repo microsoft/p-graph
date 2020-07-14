@@ -6,3 +6,5 @@ function pGraph(nodeMap: PGraphNodeMap, dependencies: DependencyList) {
 }
 
 export default pGraph;
+
+export * from "./types";
