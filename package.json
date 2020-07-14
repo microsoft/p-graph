@@ -9,7 +9,7 @@
     "start": "tsc -w --preserveWatchOutput",
     "test": "jest",
     "release": "yarn build && yarn test && beachball publish",
-    "check": "beachball check",
+    "checkchange": "beachball check",
     "change": "beachball change"
   },
   "repository": {
