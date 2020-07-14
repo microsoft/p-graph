@@ -315,7 +315,7 @@ describe("Public API", () => {
       ["A", "E"],
     ];
 
-    await pGraph(funcs, dependencies).run({ maxConcurrency: 3 });
+    await pGraph(funcs, dependencies).run({ concurrency: 3 });
 
     expect(computeMaxConcurrency(functionScheduler.callRecords)).toBeLessThanOrEqual(3);
   });
@@ -375,7 +375,7 @@ describe("Public API", () => {
     ];
 
     // Set concurrency to 1 to make it easier to validate execution order
-    await pGraph(funcs, dependencies).run({ maxConcurrency: 1 });
+    await pGraph(funcs, dependencies).run({ concurrency: 1 });
 
     // A -> C -> F is the critical path, it should be built first
     expect(functionScheduler.callRecords).toHaveScheduleOrdering("C", "B");
@@ -409,7 +409,7 @@ describe("Public API", () => {
     ];
 
     // Set concurrency to 1 to make it easier to validate execution order
-    await pGraph(funcs, dependencies).run({ maxConcurrency: 2 });
+    await pGraph(funcs, dependencies).run({ concurrency: 2 });
 
     // A -> C -> F is the critical path, it should be built first
     expect(computeMaxConcurrency(functionScheduler.callRecords)).toBeLessThanOrEqual(2);

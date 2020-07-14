@@ -27,7 +27,7 @@ export type DependencyList = [string, string][];
  */
 export interface RunOptions {
   /** The maximum amount of promises that can be executing at the same time */
-  maxConcurrency?: number;
+  concurrency?: number;
 }
 
 /**

@@ -47,10 +47,10 @@ export class PGraph {
    * @param options - An optional configuration for running the tasks
    */
   run(options?: RunOptions): Promise<void> {
-    const maxConcurrency = options?.maxConcurrency;
+    const concurrency = options?.concurrency;
 
-    if (maxConcurrency !== undefined && maxConcurrency < 0) {
-      throw new Error(`maxConcurrency must be either undefined or a positive integer, received ${options?.maxConcurrency}`);
+    if (concurrency !== undefined && concurrency < 0) {
+      throw new Error(`concurrency must be either undefined or a positive integer, received ${options?.concurrency}`);
     }
 
     const nodeCumulativePriorities = getNodeCumulativePriorities(this.pGraphDependencyMap, this.nodesWithNoDependencies);
@@ -94,7 +94,7 @@ export class PGraph {
           return;
         }
 
-        while (!priorityQueue.isEmpty() && (maxConcurrency === undefined || currentlyRunningTaskCount < maxConcurrency)) {
+        while (!priorityQueue.isEmpty() && (concurrency === undefined || currentlyRunningTaskCount < concurrency)) {
           scheduleTask()
             .then(() => trySchedulingTasks())
             .catch((e) => reject(e));
