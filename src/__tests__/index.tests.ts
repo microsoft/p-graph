@@ -54,13 +54,17 @@ class FunctionScheduler {
       item.ticksRemaining = item.ticksRemaining - 1;
     });
 
-    const remainingItems = this.currentlyRunningFunctions.filter((item) => item.ticksRemaining === 0);
+    const finishedItems = this.currentlyRunningFunctions.filter((item) => item.ticksRemaining === 0);
+    this.currentlyRunningFunctions = this.currentlyRunningFunctions.filter((item) => item.ticksRemaining !== 0);
 
-    if (remainingItems.length > 0) {
-      remainingItems.forEach((item) => {
+    if (finishedItems.length > 0) {
+      finishedItems.forEach((item) => {
         item.resolve();
         this.callRecords.push({ name: item.name, state: "end" });
       });
+    }
+
+    if (this.currentlyRunningFunctions.length > 0) {
       this.ensureTickScheduled();
     }
   }
@@ -79,6 +83,11 @@ declare global {
       toHaveScheduleOrdering(firstTaskName: string, secondTaskName: string): R;
 
       /**
+       * Enforces that a particular schedule does not schedule secondTaskName to start before firstTaskName has started
+       */
+      toHaveStartedBefore(firstTaskName: string, secondTaskName: string): R;
+
+      /**
        * Enforces that a specific task was executed
        */
       toHaveScheduledTask(taskName: string): R;
@@ -94,13 +103,21 @@ expect.extend({
     const pass = firstIndex !== -1 && secondIndex !== -1 && firstIndex < secondIndex;
 
     return {
-      message: () => `expected ${secondTaskName} to be scheduled after ${firstTaskName}`,
+      message: () => `expected ${secondTaskName} to be scheduled after ${firstTaskName} completed`,
       pass,
     };
   },
-});
+  toHaveStartedBefore(callRecords: MockFunctionCallRecord[], firstTaskName: string, secondTaskName: string) {
+    const firstIndex = callRecords.findIndex((item) => item.name === firstTaskName && item.state === "start");
+    const secondIndex = callRecords.findIndex((item) => item.name === secondTaskName && item.state === "start");
 
-expect.extend({
+    const pass = firstIndex !== -1 && secondIndex !== -1 && firstIndex < secondIndex;
+
+    return {
+      message: () => `expected ${secondTaskName} to be started after ${firstTaskName} has started`,
+      pass,
+    };
+  },
   toHaveScheduledTask(callRecords: MockFunctionCallRecord[], taskName: string) {
     const startIndex = callRecords.findIndex((item) => item.name === taskName && item.state === "end");
     const endIndex = callRecords.findIndex((item) => item.name === taskName && item.state === "start");
@@ -335,5 +352,41 @@ describe("Public API", () => {
     expect(functionScheduler.callRecords).toHaveScheduleOrdering("F", "E");
     expect(functionScheduler.callRecords).toHaveScheduleOrdering("F", "B");
     expect(functionScheduler.callRecords).toHaveScheduleOrdering("F", "D");
+  });
+
+  it("should schedule high priority tasks and dependencies before lower priority tasks when maxConcurrency is greater than 1", async () => {
+    const functionScheduler = new FunctionScheduler();
+
+    const funcs = new Map([
+      defineMockNode({ name: "A", duration: 1 }, functionScheduler),
+      defineMockNode({ name: "B", duration: 16, priority: 16 }, functionScheduler),
+      defineMockNode({ name: "C", duration: 4, priority: 4 }, functionScheduler),
+      defineMockNode({ name: "D", duration: 4, priority: 4 }, functionScheduler),
+      defineMockNode({ name: "E", duration: 12, priority: 12 }, functionScheduler),
+      defineMockNode({ name: "F", duration: 16, priority: 16 }, functionScheduler),
+    ]);
+
+    //      A
+    //  B   C   D
+    //    |E F|
+    const dependencies: DependencyList = [
+      ["A", "B"],
+      ["A", "C"],
+      ["A", "D"],
+      ["C", "E"],
+      ["C", "F"],
+    ];
+
+    // Set concurrency to 1 to make it easier to validate execution order
+    await pGraph(funcs, dependencies).run({ maxConcurrency: 2 });
+
+    // A -> C -> F is the critical path, it should be built first
+    expect(computeMaxConcurrency(functionScheduler.callRecords)).toBeLessThanOrEqual(2);
+    expect(functionScheduler.callRecords).toHaveStartedBefore("C", "B");
+    expect(functionScheduler.callRecords).toHaveStartedBefore("C", "D");
+    expect(functionScheduler.callRecords).toHaveStartedBefore("B", "D");
+    expect(functionScheduler.callRecords).toHaveStartedBefore("F", "D");
+    expect(functionScheduler.callRecords).toHaveStartedBefore("E", "D");
+    expect(functionScheduler.callRecords).toHaveStartedBefore("F", "E");
   });
 });
