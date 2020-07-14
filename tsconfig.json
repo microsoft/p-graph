@@ -7,7 +7,9 @@
     "esModuleInterop": true,
     "allowSyntheticDefaultImports": true,
     "lib": ["ES2017"],
-    "outDir": "lib"
+    "outDir": "lib",
+    "noUnusedLocals": true,
+    "strict": true
   },
   "include": ["src"]
 }
