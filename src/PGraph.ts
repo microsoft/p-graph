@@ -37,7 +37,7 @@ export class PGraph {
       throw new Error("We could not find a node in the graph with no dependencies, this likely means there is a cycle including all nodes");
     }
 
-    if (graphHasCycles(this.pGraphDependencyMap, this.nodesWithNoDependencies)) {
+    if (graphHasCycles(this.pGraphDependencyMap)) {
       throw new Error("The dependency graph has a cycle in it");
     }
   }
