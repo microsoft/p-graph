@@ -29,38 +29,61 @@ export function graphHasCycles(pGraphDependencyMap: Map<string, PGraphNodeWithDe
   return false;
 }
 
+/**
+ * Stack element represents an item on the
+ * stack used for depth-first search
+ */
+interface StackElement {
+  /**
+   * The node name
+   */
+  node: string;
+
+  /**
+   * This represents if this instance of the
+   * node on the stack is being traversed or not
+   */
+  traversing: boolean;
+}
+
 const hasCycleDFS = (graph: Map<string, PGraphNodeWithDependencies>, visitMap: Map<string, boolean>, nodeId: string): boolean => {
-  if (visitMap.has(nodeId)) {
-    /**
-     * If the visitMap has `true` for this nodeId,
-     * this means that this node has been visited before
-     * in this current traversal, hence there is a cycle.
-     */
-    return Boolean(visitMap.get(nodeId));
-  }
+  const stack: StackElement[] = [{ node: nodeId, traversing: false }];
+  while (stack.length > 0) {
+    const current = stack[stack.length - 1];
+    if (!current.traversing) {
+      if (visitMap.get(current.node)) {
+        /**
+         * The current node has already been visited,
+         * hence there is a cycle.
+         */
+        return true;
+      }
 
-  const node = graph.get(nodeId);
-  if (!node) {
-    throw new Error(`Could not find node "${nodeId}" in the graph`);
-  }
+      /**
+       * The current node is starting it's traversal
+       */
+      visitMap.set(current.node, true);
+      stack[stack.length - 1] = { ...current, traversing: true };
 
-  /**
-   * This node is going to be traversed
-   */
-  visitMap.set(nodeId, true);
+      /**
+       * Get the current node in the graph
+       */
+      const node = graph.get(current.node);
+      if (!node) {
+        throw new Error(`Could not find node "${current.node}" in the graph`);
+      }
 
-  /**
-   * Search for cycles in dependencies of this node
-   */
-  for (let dependencyId of node.dependsOn) {
-    if (hasCycleDFS(graph, visitMap, dependencyId)) {
-      return true;
+      /**
+       * Add the current node's dependencies to the stack
+       */
+      stack.push(...[...node.dependsOn].map((n) => ({ node: n, traversing: false })));
+    } else {
+      /**
+       * The current node has been fully traversed.
+       */
+      visitMap.set(current.node, false);
+      stack.pop();
     }
   }
-
-  /**
-   * This node has been traversed and has no cycles
-   */
-  visitMap.set(nodeId, false);
   return false;
 };
