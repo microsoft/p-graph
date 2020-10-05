@@ -1,0 +1,8 @@
+{
+  "type": "patch",
+  "comment": "perf: Improve perf of graphHasCycles function",
+  "packageName": "p-graph",
+  "email": "olwheele@microsoft.com",
+  "dependentChangeType": "patch",
+  "date": "2020-10-02T18:40:20.038Z"
+}
