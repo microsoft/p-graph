@@ -2,6 +2,21 @@
   "name": "p-graph",
   "entries": [
     {
+      "date": "Mon, 05 Oct 2020 17:08:03 GMT",
+      "tag": "p-graph_v1.0.2",
+      "version": "1.0.2",
+      "comments": {
+        "patch": [
+          {
+            "comment": "perf: Improve perf of graphHasCycles function",
+            "author": "olwheele@microsoft.com",
+            "commit": "d98b31d8bd9734f9d381361e377a3743fac7ebb3",
+            "package": "p-graph"
+          }
+        ]
+      }
+    },
+    {
       "date": "Tue, 14 Jul 2020 21:39:50 GMT",
       "tag": "p-graph_v1.0.1",
       "version": "1.0.1",
