@@ -51,12 +51,20 @@ const hasCycleDFS = (graph: Map<string, PGraphNodeWithDependencies>, visitMap: M
   while (stack.length > 0) {
     const current = stack[stack.length - 1];
     if (!current.traversing) {
-      if (visitMap.get(current.node)) {
-        /**
-         * The current node has already been visited,
-         * hence there is a cycle.
-         */
-        return true;
+      if (visitMap.has(current.node)) {
+        if (visitMap.get(current.node)) {
+          /**
+           * The current node has already been visited,
+           * hence there is a cycle.
+           */
+          return true;
+        } else {
+          /**
+           * The current node has already been fully traversed
+           */
+          stack.pop();
+          continue;
+        }
       }
 
       /**
@@ -79,7 +87,7 @@ const hasCycleDFS = (graph: Map<string, PGraphNodeWithDependencies>, visitMap: M
       stack.push(...[...node.dependsOn].map((n) => ({ node: n, traversing: false })));
     } else {
       /**
-       * The current node has been fully traversed.
+       * The current node has now been fully traversed.
        */
       visitMap.set(current.node, false);
       stack.pop();
