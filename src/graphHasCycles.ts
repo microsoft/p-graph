@@ -68,7 +68,7 @@ const hasCycleDFS = (graph: Map<string, PGraphNodeWithDependencies>, visitMap: M
       }
 
       /**
-       * The current node is starting it's traversal
+       * The current node is starting its traversal
        */
       visitMap.set(current.node, true);
       stack[stack.length - 1] = { ...current, traversing: true };
