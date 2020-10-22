@@ -1,0 +1,8 @@
+{
+  "type": "minor",
+  "comment": "adding a continue option to p-graph to allow graph to be traversed as far as possible",
+  "packageName": "p-graph",
+  "email": "kchau@microsoft.com",
+  "dependentChangeType": "patch",
+  "date": "2020-10-22T19:22:53.080Z"
+}
