@@ -1,8 +1,16 @@
 # Change Log - p-graph
 
-This log was last generated on Mon, 05 Oct 2020 17:08:03 GMT and should not be manually modified.
+This log was last generated on Thu, 22 Oct 2020 19:44:39 GMT and should not be manually modified.
 
 <!-- Start content -->
+
+## 1.1.0
+
+Thu, 22 Oct 2020 19:44:39 GMT
+
+### Minor changes
+
+- adding a continue option to p-graph to allow graph to be traversed as far as possible (kchau@microsoft.com)
 
 ## 1.0.2
 

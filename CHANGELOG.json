@@ -2,6 +2,21 @@
   "name": "p-graph",
   "entries": [
     {
+      "date": "Thu, 22 Oct 2020 19:44:39 GMT",
+      "tag": "p-graph_v1.1.0",
+      "version": "1.1.0",
+      "comments": {
+        "minor": [
+          {
+            "comment": "adding a continue option to p-graph to allow graph to be traversed as far as possible",
+            "author": "kchau@microsoft.com",
+            "commit": "dbe68936785af82610b1a2dafefad0c87e7ea3b3",
+            "package": "p-graph"
+          }
+        ]
+      }
+    },
+    {
       "date": "Mon, 05 Oct 2020 17:08:03 GMT",
       "tag": "p-graph_v1.0.2",
       "version": "1.0.2",
