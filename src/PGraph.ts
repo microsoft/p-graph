@@ -117,7 +117,6 @@ export class PGraph {
           }
           return;
         }
-
         
         while (!priorityQueue.isEmpty() && (concurrency === undefined || currentlyRunningTaskCount < concurrency)) {
           scheduleTask()
