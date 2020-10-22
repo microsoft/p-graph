@@ -12,7 +12,7 @@ export class PGraph {
 
   constructor(nodeMap: PGraphNodeMap, dependencies: DependencyList) {
     [...nodeMap.entries()].forEach(([key, node]) => {
-      this.pGraphDependencyMap.set(key, { ...node, dependsOn: new Set(), dependedOnBy: new Set() });
+      this.pGraphDependencyMap.set(key, { ...node, dependsOn: new Set(), dependedOnBy: new Set(), failed: false });
     });
 
     dependencies.forEach(([subjectId, dependentId]) => {
@@ -68,36 +68,74 @@ export class PGraph {
       }
       const taskToRun = this.pGraphDependencyMap.get(taskToRunId)!;
 
-      const taskFnPromise = taskToRun.run();
-      currentlyRunningTaskCount += 1;
+      try {
+        currentlyRunningTaskCount += 1;
 
-      await taskFnPromise;
-      currentlyRunningTaskCount -= 1;
-
-      // Let's remove this task from all dependent task's dependency array
-      taskToRun.dependedOnBy.forEach((dependentId) => {
-        const dependentNode = this.pGraphDependencyMap.get(dependentId)!;
-        dependentNode.dependsOn.delete(taskToRunId);
-
-        // If the task that just completed was the last remaining dependency for a node, add it to the set of unblocked nodes
-        if (dependentNode.dependsOn.size === 0) {
-          priorityQueue.insert(dependentId, nodeCumulativePriorities.get(dependentId)!);
+        if (!taskToRun.failed) {
+          await taskToRun.run();
         }
-      });
+      } catch(e) {
+        // mark node and its children to be "failed" in the case of continue, we'll traverse, but not run the nodes
+        taskToRun.failed = true;
+        throw e;
+      } finally {
+        // schedule next round of tasks if options.continue (continue on error) or successfully run task
+        const shouldScheduleMoreTasks = options?.continue || !taskToRun.failed;
+     
+        if (shouldScheduleMoreTasks) {
+          // "currentlyRunningTaskCount" cannot be decremented on non-continue cases because of async nature of
+          // the queue runner. The race condition will end up appearing as if there was no failures even though
+          // there was one
+          currentlyRunningTaskCount -= 1;
+
+          // Let's remove this task from all dependent task's dependency array
+          taskToRun.dependedOnBy.forEach((dependentId) => {
+            const dependentNode = this.pGraphDependencyMap.get(dependentId)!;
+
+            if (taskToRun.failed) {
+              dependentNode.failed = true;
+            }
+
+            dependentNode.dependsOn.delete(taskToRunId);
+
+            // If the task that just completed was the last remaining dependency for a node, add it to the set of unblocked nodes
+            if (dependentNode.dependsOn.size === 0) {
+              priorityQueue.insert(dependentId, nodeCumulativePriorities.get(dependentId)!);
+            }
+          });        
+        }
+      }
     };
 
     return new Promise((resolve, reject) => {
+      let errors: Error[] = [];
+
       const trySchedulingTasks = () => {
         if (priorityQueue.isEmpty() && currentlyRunningTaskCount === 0) {
           // We are done running all tasks, let's resolve the promise done
-          resolve();
+          if (errors.length === 0) {
+            resolve();
+          } else {
+            reject(errors);
+          }
           return;
         }
-
+        
         while (!priorityQueue.isEmpty() && (concurrency === undefined || currentlyRunningTaskCount < concurrency)) {
           scheduleTask()
             .then(() => trySchedulingTasks())
-            .catch((e) => reject(e));
+            .catch((e) => {
+              errors.push(e);
+
+              // if a continue option is set, this merely records what errors have been encountered
+              // it'll continue down the execution until all the tasks that still works 
+              if (options?.continue) {
+                trySchedulingTasks();
+              } else {
+                // immediately reject, if not using "continue" option
+                reject(e);
+              }
+            });
         }
       };
 

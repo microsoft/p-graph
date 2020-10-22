@@ -28,6 +28,9 @@ export type DependencyList = [string, string][];
 export interface RunOptions {
   /** The maximum amount of promises that can be executing at the same time. When not provided, we do not limit the number of concurrent tasks and run tasks as soon as they are unblocked */
   concurrency?: number;
+
+  /** Continues the graph even if there's an rejected task */
+  continue?: boolean;
 }
 
 /**
@@ -43,4 +46,9 @@ export interface PGraphNodeWithDependencies extends PGraphNode {
    * The set of nodes that cannot start execution until this node has completed execution.
    */
   dependedOnBy: Set<string>;
+
+  /**
+   * Flag whether this node is failed or not (if so, skip it and mark its children to be skipped)
+   */
+  failed: boolean;
 }

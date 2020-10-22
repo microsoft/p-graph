@@ -228,8 +228,42 @@ describe("Public API", () => {
       ["A", "C"],
     ];
 
-    await expect(pGraph(nodeMap, dependencies).run()).rejects.toEqual("C rejected");
+    await expect(pGraph(nodeMap, dependencies).run()).rejects.toContain("C rejected");
   });
+
+  it("throws an exception, but continues to run the entire graph", async () => {
+    const runFns = {
+      A: jest.fn().mockReturnValue(Promise.resolve()),
+      B: jest.fn().mockReturnValue(Promise.resolve()),
+      D: jest.fn().mockReturnValue(Promise.resolve()),
+      E: jest.fn().mockReturnValue(Promise.resolve()),
+      F: jest.fn().mockReturnValue(Promise.resolve())
+    }
+
+    const nodeMap: PGraphNodeMap = new Map([
+      ["A", { run: runFns.A }],
+      ["B", { run: runFns.B }],
+      ["C", { run: () => Promise.reject("C rejected") }],
+      ["D", { run: runFns.D }],
+      ["E", { run: runFns.E }],
+      ["F", { run: runFns.F }],
+    ]);
+
+    const dependencies: DependencyList = [
+      ["A", "B"],
+      ["A", "C"],
+      ["A", "D"],
+      ["C", "D"],
+      ["A", "E"],
+      ["E", "F"],
+    ];
+
+    await expect(pGraph(nodeMap, dependencies).run({concurrency: 1, continue: true})).rejects.toContain("C rejected");
+    expect(runFns.E).toHaveBeenCalled();
+    expect(runFns.F).toHaveBeenCalled();
+    expect(runFns.D).not.toHaveBeenCalled();
+  });
+
 
   it("throws when one of the dependencies references a node not in the node map", async () => {
     const nodeMap: PGraphNodeMap = new Map([
