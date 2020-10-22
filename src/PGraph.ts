@@ -83,6 +83,9 @@ export class PGraph {
         const shouldScheduleMoreTasks = options?.continue || !taskToRun.failed;
      
         if (shouldScheduleMoreTasks) {
+          // "currentlyRunningTaskCount" cannot be decremented on non-continue cases because of async nature of
+          // the queue runner. The race condition will end up appearing as if there was no failures even though
+          // there was one
           currentlyRunningTaskCount -= 1;
 
           // Let's remove this task from all dependent task's dependency array
