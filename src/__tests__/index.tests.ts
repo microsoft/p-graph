@@ -187,7 +187,7 @@ describe("Public API", () => {
     expect(() => pGraph(nodeMap, dependencies)).toThrow();
   });
 
-  it("throws an exception when the dependency graph has a cycle", async () => {
+  it("throws an exception with detailed message when the dependency graph has a cycle", async () => {
     // This is almost the same as the last test, except the root node is not a part of the cycle
     const nodeMap: PGraphNodeMap = new Map([
       ["A", { run: () => Promise.resolve() }],
@@ -202,8 +202,8 @@ describe("Public API", () => {
       ["C", "D"],
       ["D", "B"],
     ];
-
-    expect(() => pGraph(nodeMap, dependencies)).toThrow();
+    const expectedErrorMessage = "The dependency graph has a cycle at B which depends on A,D and is depended on by C";
+    expect(() => pGraph(nodeMap, dependencies)).toThrow(expectedErrorMessage);
   });
 
   it("resolves an empty dependnecy graph", async () => {

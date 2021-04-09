@@ -1,9 +1,10 @@
-import { PGraphNodeWithDependencies } from "./types";
+import { PGraphNodeWithCyclicDependency, PGraphNodeWithNoCyclicDependency, PGraphNodeWithDependencies } from "./types";
 
 /**
- * Checks for any cycles in the dependency graph, returning false if no cycles were detected.
+ * Checks for any cycles in the dependency graph, returning `{ hasCycle: false }` if no cycles were detected.
+ * Otherwise it returns the details of where the cycle was detected.
  */
-export function graphHasCycles(pGraphDependencyMap: Map<string, PGraphNodeWithDependencies>): boolean {
+export function graphHasCycles(pGraphDependencyMap: Map<string, PGraphNodeWithDependencies>): PGraphNodeWithCyclicDependency | PGraphNodeWithNoCyclicDependency {
   /**
    *  A map to keep track of the visited and visiting nodes.
    * <node, true> entry means it is currently being visited.
@@ -12,7 +13,7 @@ export function graphHasCycles(pGraphDependencyMap: Map<string, PGraphNodeWithDe
    */
   const visitMap = new Map<string, boolean>();
 
-  for (const [nodeId] of pGraphDependencyMap.entries()) {
+  for (const [nodeId, nodes] of pGraphDependencyMap.entries()) {
     /**
      * Test whether this node has already been visited or not.
      */
@@ -20,13 +21,20 @@ export function graphHasCycles(pGraphDependencyMap: Map<string, PGraphNodeWithDe
       /**
        * Test whether the sub-graph of this node has cycles.
        */
-      if (hasCycleDFS(pGraphDependencyMap, visitMap, nodeId)) {
-        return true;
+      if (hasCycleDFS(pGraphDependencyMap,  visitMap, nodeId)) {
+        return {
+          hasCycle: true,
+          details: {
+            nodeId,
+            dependsOn: Array.from(nodes.dependsOn),
+            dependedOnBy: Array.from(nodes.dependedOnBy)
+          }
+        };
       }
     }
   }
 
-  return false;
+  return { hasCycle: false };
 }
 
 /**
