@@ -1,0 +1,8 @@
+{
+  "type": "patch",
+  "comment": "add descriptive error message when there is a cyclic dependancy",
+  "packageName": "p-graph",
+  "email": "cheruiyotbryan@gmail.com",
+  "dependentChangeType": "patch",
+  "date": "2021-04-09T12:05:29.808Z"
+}
