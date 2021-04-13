@@ -37,8 +37,11 @@ export class PGraph {
       throw new Error("We could not find a node in the graph with no dependencies, this likely means there is a cycle including all nodes");
     }
 
-    if (graphHasCycles(this.pGraphDependencyMap)) {
-      throw new Error("The dependency graph has a cycle in it");
+    const hasCycles = graphHasCycles(this.pGraphDependencyMap);
+
+    if (hasCycles.hasCycle) {
+      const { nodeId, dependsOn, dependedOnBy } = hasCycles.details;
+      throw new Error(`The dependency graph has a cycle at ${nodeId} which depends on ${dependsOn} and is depended on by ${dependedOnBy}`);
     }
   }
 
@@ -81,7 +84,7 @@ export class PGraph {
       } finally {
         // schedule next round of tasks if options.continue (continue on error) or successfully run task
         const shouldScheduleMoreTasks = options?.continue || !taskToRun.failed;
-     
+
         if (shouldScheduleMoreTasks) {
           // "currentlyRunningTaskCount" cannot be decremented on non-continue cases because of async nature of
           // the queue runner. The race condition will end up appearing as if there was no failures even though
@@ -102,7 +105,7 @@ export class PGraph {
             if (dependentNode.dependsOn.size === 0) {
               priorityQueue.insert(dependentId, nodeCumulativePriorities.get(dependentId)!);
             }
-          });        
+          });
         }
       }
     };
@@ -120,7 +123,7 @@ export class PGraph {
           }
           return;
         }
-        
+
         while (!priorityQueue.isEmpty() && (concurrency === undefined || currentlyRunningTaskCount < concurrency)) {
           scheduleTask()
             .then(() => trySchedulingTasks())
@@ -128,7 +131,7 @@ export class PGraph {
               errors.push(e);
 
               // if a continue option is set, this merely records what errors have been encountered
-              // it'll continue down the execution until all the tasks that still works 
+              // it'll continue down the execution until all the tasks that still works
               if (options?.continue) {
                 trySchedulingTasks();
               } else {

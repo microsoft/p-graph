@@ -52,3 +52,35 @@ export interface PGraphNodeWithDependencies extends PGraphNode {
    */
   failed: boolean;
 }
+
+export interface PGraphNodeWithNoCyclicDependency {
+  /**
+   * Flag whether there is no cyclic dependency
+   */
+  hasCycle: false;
+}
+
+export interface PGraphNodeWithCyclicDependency {
+  /**
+   * Flag whether there is a cyclic dependency
+   */
+  hasCycle: true;
+  /**
+   * Details on where the cyclic dependency was detected.
+   */
+  details: {
+    /**
+     * The identifier of this node, where the cyclic dependency was detected
+     */
+    nodeId: string,
+    /**
+     * The set of nodes that this node depends on.
+     */
+    dependsOn: string[];
+
+    /**
+     * The set of nodes that depend on this node.
+     */
+    dependedOnBy: string[];
+  }
+}
