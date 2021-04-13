@@ -1,8 +1,16 @@
 # Change Log - p-graph
 
-This log was last generated on Thu, 22 Oct 2020 19:44:39 GMT and should not be manually modified.
+This log was last generated on Tue, 13 Apr 2021 06:46:49 GMT and should not be manually modified.
 
 <!-- Start content -->
+
+## 1.1.1
+
+Tue, 13 Apr 2021 06:46:49 GMT
+
+### Patches
+
+- add descriptive error message when there is a cyclic dependancy (cheruiyotbryan@gmail.com)
 
 ## 1.1.0
 

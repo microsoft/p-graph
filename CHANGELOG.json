@@ -2,6 +2,21 @@
   "name": "p-graph",
   "entries": [
     {
+      "date": "Tue, 13 Apr 2021 06:46:49 GMT",
+      "tag": "p-graph_v1.1.1",
+      "version": "1.1.1",
+      "comments": {
+        "patch": [
+          {
+            "comment": "add descriptive error message when there is a cyclic dependancy",
+            "author": "cheruiyotbryan@gmail.com",
+            "commit": "123d9fa7148558b9e7e9100b1b57e2ce4d3a8e11",
+            "package": "p-graph"
+          }
+        ]
+      }
+    },
+    {
       "date": "Thu, 22 Oct 2020 19:44:39 GMT",
       "tag": "p-graph_v1.1.0",
       "version": "1.1.0",
