@@ -202,7 +202,7 @@ describe("Public API", () => {
       ["C", "D"],
       ["D", "B"],
     ];
-    const expectedErrorMessage = "The dependency graph has a cycle at B which depends on A,D and is depended on by C";
+    const expectedErrorMessage = "A cycle has been detected including the following nodes: B => C => D";
     expect(() => pGraph(nodeMap, dependencies)).toThrow(expectedErrorMessage);
   });
 
