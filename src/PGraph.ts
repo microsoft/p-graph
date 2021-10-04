@@ -40,7 +40,7 @@ export class PGraph {
     const graph = graphHasCycles(this.pGraphDependencyMap);
 
     if (graph.hasCycle) {
-      throw new Error(`A cycle has been detected including the following nodes: ${graph.cycle.join(" <= ")}`);
+      throw new Error(`A cycle has been detected including the following nodes:\n${graph.cycle.join("\n")}`);
     }
   }
 
