@@ -209,6 +209,29 @@ D`;
     expect(() => pGraph(nodeMap, dependencies)).toThrow(expectedErrorMessage);
   });
 
+  it("throws an exception in the first instance of a cycle that has been detected when there are overlapped cycles", async () => {
+    // This is almost the same as the last test, except the root node is not a part of the cycle
+    const nodeMap: PGraphNodeMap = new Map([
+      ["A", { run: () => Promise.resolve() }],
+      ["B", { run: () => Promise.resolve() }],
+      ["C", { run: () => Promise.resolve() }],
+      ["D", { run: () => Promise.resolve() }],
+      ["E", { run: () => Promise.resolve() }],
+      ["F", { run: () => Promise.resolve() }],
+    ]);
+
+    const dependencies: DependencyList = [
+      ["A", "B"],
+      ["B", "C"],
+      ["C", "D"],
+      ["D", "B"],
+      ["C", "E"],
+      ["E", "F"],
+      ["F", "D"],
+    ];
+    expect(() => pGraph(nodeMap, dependencies)).toThrow();
+  });
+
   it("resolves an empty dependnecy graph", async () => {
     const nodeMap: PGraphNodeMap = new Map();
 
