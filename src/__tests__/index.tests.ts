@@ -219,7 +219,7 @@ D`;
       ["E", { run: () => Promise.resolve() }],
       ["F", { run: () => Promise.resolve() }],
     ]);
-
+    // B -> C -> E -> F -> D is the first cycle detected
     const dependencies: DependencyList = [
       ["A", "B"],
       ["B", "C"],
@@ -229,7 +229,13 @@ D`;
       ["E", "F"],
       ["F", "D"],
     ];
-    expect(() => pGraph(nodeMap, dependencies)).toThrow();
+    const expectedErrorMessage = `A cycle has been detected including the following nodes:
+B
+C
+E
+F
+D`
+    expect(() => pGraph(nodeMap, dependencies)).toThrow(expectedErrorMessage);
   });
 
   it("resolves an empty dependnecy graph", async () => {
