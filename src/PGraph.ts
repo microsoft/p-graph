@@ -37,11 +37,10 @@ export class PGraph {
       throw new Error("We could not find a node in the graph with no dependencies, this likely means there is a cycle including all nodes");
     }
 
-    const hasCycles = graphHasCycles(this.pGraphDependencyMap);
+    const graph = graphHasCycles(this.pGraphDependencyMap);
 
-    if (hasCycles.hasCycle) {
-      const { nodeId, dependsOn, dependedOnBy } = hasCycles.details;
-      throw new Error(`The dependency graph has a cycle at ${nodeId} which depends on ${dependsOn} and is depended on by ${dependedOnBy}`);
+    if (graph.hasCycle) {
+      throw new Error(`A cycle has been detected including the following nodes:\n${graph.cycle.join("\n")}`);
     }
   }
 
