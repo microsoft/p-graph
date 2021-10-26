@@ -1,8 +1,0 @@
-{
-  "type": "patch",
-  "comment": "update cyclic dependancy error to inlude the cycle",
-  "packageName": "p-graph",
-  "email": "cheruiyotbryan@gmail.com",
-  "dependentChangeType": "patch",
-  "date": "2021-09-23T13:29:58.510Z"
-}
