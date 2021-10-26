@@ -21,7 +21,7 @@ export function graphHasCycles(pGraphDependencyMap: Map<string, PGraphNodeWithDe
       /**
        * Test whether the sub-graph of this node has cycles.
        */
-      const cycle = hasCycleDFS(pGraphDependencyMap,  visitMap, nodeId);
+      const cycle = searchForCycleDFS(pGraphDependencyMap,  visitMap, nodeId);
       if (cycle.length) {
         return { hasCycle: true, cycle };
       }
@@ -48,7 +48,7 @@ interface StackElement {
   traversing: boolean;
 }
 
-const hasCycleDFS = (graph: Map<string, PGraphNodeWithDependencies>, visitMap: Map<string, boolean>, nodeId: string): string[] => {
+const searchForCycleDFS = (graph: Map<string, PGraphNodeWithDependencies>, visitMap: Map<string, boolean>, nodeId: string): string[] => {
   const stack: StackElement[] = [{ node: nodeId, traversing: false }];
   while (stack.length > 0) {
     const current = stack[stack.length - 1];
