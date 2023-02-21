@@ -2,7 +2,7 @@ import { PGraphNodeWithCyclicDependency, PGraphNodeWithNoCyclicDependency, PGrap
 
 /**
  * Checks for any cycles in the dependency graph, returning `{ hasCycle: false }` if no cycles were detected.
- * Otherwise it returns the details of where the cycle was detected.
+ * Otherwise it returns the chain of nodes where the cycle was detected.
  */
 export function graphHasCycles(pGraphDependencyMap: Map<string, PGraphNodeWithDependencies>): PGraphNodeWithCyclicDependency | PGraphNodeWithNoCyclicDependency {
   /**
@@ -13,7 +13,7 @@ export function graphHasCycles(pGraphDependencyMap: Map<string, PGraphNodeWithDe
    */
   const visitMap = new Map<string, boolean>();
 
-  for (const [nodeId, nodes] of pGraphDependencyMap.entries()) {
+  for (const [nodeId] of pGraphDependencyMap.entries()) {
     /**
      * Test whether this node has already been visited or not.
      */
@@ -21,15 +21,9 @@ export function graphHasCycles(pGraphDependencyMap: Map<string, PGraphNodeWithDe
       /**
        * Test whether the sub-graph of this node has cycles.
        */
-      if (hasCycleDFS(pGraphDependencyMap,  visitMap, nodeId)) {
-        return {
-          hasCycle: true,
-          details: {
-            nodeId,
-            dependsOn: Array.from(nodes.dependsOn),
-            dependedOnBy: Array.from(nodes.dependedOnBy)
-          }
-        };
+      const cycle = searchForCycleDFS(pGraphDependencyMap,  visitMap, nodeId);
+      if (cycle.length) {
+        return { hasCycle: true, cycle };
       }
     }
   }
@@ -54,7 +48,7 @@ interface StackElement {
   traversing: boolean;
 }
 
-const hasCycleDFS = (graph: Map<string, PGraphNodeWithDependencies>, visitMap: Map<string, boolean>, nodeId: string): boolean => {
+const searchForCycleDFS = (graph: Map<string, PGraphNodeWithDependencies>, visitMap: Map<string, boolean>, nodeId: string): string[] => {
   const stack: StackElement[] = [{ node: nodeId, traversing: false }];
   while (stack.length > 0) {
     const current = stack[stack.length - 1];
@@ -65,7 +59,8 @@ const hasCycleDFS = (graph: Map<string, PGraphNodeWithDependencies>, visitMap: M
            * The current node has already been visited,
            * hence there is a cycle.
            */
-          return true;
+          const listOfCycle = stack.filter(i => i.traversing).map(a => a.node);
+          return listOfCycle.slice(listOfCycle.indexOf(current.node));
         } else {
           /**
            * The current node has already been fully traversed
@@ -90,9 +85,9 @@ const hasCycleDFS = (graph: Map<string, PGraphNodeWithDependencies>, visitMap: M
       }
 
       /**
-       * Add the current node's dependencies to the stack
+       * Add the current node's dependents to the stack
        */
-      stack.push(...[...node.dependsOn].map((n) => ({ node: n, traversing: false })));
+      stack.push(...[...node.dependedOnBy].map((n) => ({ node: n, traversing: false })));
     } else {
       /**
        * The current node has now been fully traversed.
@@ -101,5 +96,5 @@ const hasCycleDFS = (graph: Map<string, PGraphNodeWithDependencies>, visitMap: M
       stack.pop();
     }
   }
-  return false;
+  return [];
 };

@@ -66,21 +66,7 @@ export interface PGraphNodeWithCyclicDependency {
    */
   hasCycle: true;
   /**
-   * Details on where the cyclic dependency was detected.
+   * Chain of node where the cyclic dependency was detected.
    */
-  details: {
-    /**
-     * The identifier of this node, where the cyclic dependency was detected
-     */
-    nodeId: string,
-    /**
-     * The set of nodes that this node depends on.
-     */
-    dependsOn: string[];
-
-    /**
-     * The set of nodes that depend on this node.
-     */
-    dependedOnBy: string[];
-  }
+  cycle: string[]
 }
