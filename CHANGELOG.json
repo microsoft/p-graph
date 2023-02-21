@@ -2,6 +2,36 @@
   "name": "p-graph",
   "entries": [
     {
+      "date": "Tue, 21 Feb 2023 20:16:34 GMT",
+      "tag": "p-graph_v1.1.2",
+      "version": "1.1.2",
+      "comments": {
+        "none": [
+          {
+            "author": "ecraig12345@gmail.com",
+            "package": "p-graph",
+            "commit": "4acea4dca5faed6e325b07a778e6c72cb2229208",
+            "comment": "Update beachball"
+          }
+        ]
+      }
+    },
+    {
+      "date": "Tue, 26 Oct 2021 07:12:04 GMT",
+      "tag": "p-graph_v1.1.2",
+      "version": "1.1.2",
+      "comments": {
+        "patch": [
+          {
+            "comment": "update cyclic dependancy error to inlude the cycle",
+            "author": "cheruiyotbryan@gmail.com",
+            "commit": "1e42bb7ba4d295a25c0f17ce97aba9f8f189daa6",
+            "package": "p-graph"
+          }
+        ]
+      }
+    },
+    {
       "date": "Tue, 13 Apr 2021 06:46:49 GMT",
       "tag": "p-graph_v1.1.1",
       "version": "1.1.1",

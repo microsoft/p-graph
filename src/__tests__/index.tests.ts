@@ -202,7 +202,39 @@ describe("Public API", () => {
       ["C", "D"],
       ["D", "B"],
     ];
-    const expectedErrorMessage = "The dependency graph has a cycle at B which depends on A,D and is depended on by C";
+    const expectedErrorMessage = `A cycle has been detected including the following nodes:
+B
+C
+D`;
+    expect(() => pGraph(nodeMap, dependencies)).toThrow(expectedErrorMessage);
+  });
+
+  it("throws an exception in the first instance of a cycle that has been detected when there are overlapped cycles", async () => {
+    // This is almost the same as the last test, except the root node is not a part of the cycle
+    const nodeMap: PGraphNodeMap = new Map([
+      ["A", { run: () => Promise.resolve() }],
+      ["B", { run: () => Promise.resolve() }],
+      ["C", { run: () => Promise.resolve() }],
+      ["D", { run: () => Promise.resolve() }],
+      ["E", { run: () => Promise.resolve() }],
+      ["F", { run: () => Promise.resolve() }],
+    ]);
+    // B -> C -> E -> F -> D is the first cycle detected
+    const dependencies: DependencyList = [
+      ["A", "B"],
+      ["B", "C"],
+      ["C", "D"],
+      ["D", "B"],
+      ["C", "E"],
+      ["E", "F"],
+      ["F", "D"],
+    ];
+    const expectedErrorMessage = `A cycle has been detected including the following nodes:
+B
+C
+E
+F
+D`
     expect(() => pGraph(nodeMap, dependencies)).toThrow(expectedErrorMessage);
   });
 

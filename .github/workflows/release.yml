@@ -11,6 +11,9 @@ jobs:
   build:
     runs-on: ubuntu-latest
 
+    # This environment contains secrets needed for publishing
+    environment: release
+
     strategy:
       matrix:
         node-version: [12.x]
@@ -19,17 +22,33 @@ jobs:
       - uses: actions/checkout@v2
         with:
           fetch-depth: 0
-          token: ${{ secrets.repo_pat }}
+          # Don't save creds in the git config (so it's easier to override later)
+          persist-credentials: false
+
       - name: Use Node.js ${{ matrix.node-version }}
         uses: actions/setup-node@v1
         with:
           node-version: ${{ matrix.node-version }}
+
       - run: yarn
+
       - run: yarn build
+
       - run: yarn test
-      - run: |
+
+      - name: Publish package
+        run: |
           git config user.email "kchau@microsoft.com"
           git config user.name "Ken Chau"
-      - run: yarn release -y -n $NPM_AUTHTOKEN
+
+          # Get the existing remote URL without creds, and use a trap (like try/finally)
+          # to restore it after this step finishes
+          trap "git remote set-url origin '$(git remote get-url origin)'" EXIT
+
+          # Add a token to the remote URL for auth during release
+          git remote set-url origin "https://$REPO_PAT@github.com/$GITHUB_REPOSITORY"
+
+          yarn release -y -n "$NPM_AUTHTOKEN"
         env:
-          NPM_AUTHTOKEN: ${{ secrets.npm_authtoken }}
+          NPM_AUTHTOKEN: ${{ secrets.NPM_AUTHTOKEN }}
+          REPO_PAT: ${{ secrets.REPO_PAT }}
