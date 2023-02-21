@@ -1,8 +1,16 @@
 # Change Log - p-graph
 
-This log was last generated on Tue, 13 Apr 2021 06:46:49 GMT and should not be manually modified.
+This log was last generated on Tue, 26 Oct 2021 07:12:04 GMT and should not be manually modified.
 
 <!-- Start content -->
+
+## 1.1.2
+
+Tue, 26 Oct 2021 07:12:04 GMT
+
+### Patches
+
+- update cyclic dependancy error to inlude the cycle (cheruiyotbryan@gmail.com)
 
 ## 1.1.1
 
