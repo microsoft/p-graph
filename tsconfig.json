@@ -9,7 +9,8 @@
     "lib": ["ES2017"],
     "outDir": "lib",
     "noUnusedLocals": true,
-    "strict": true
+    "strict": true,
+    "types": ["jest"]
   },
   "include": ["src"]
 }
