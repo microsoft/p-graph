@@ -2,6 +2,27 @@
   "name": "p-graph",
   "entries": [
     {
+      "date": "Wed, 20 Aug 2025 03:56:20 GMT",
+      "version": "1.2.0",
+      "tag": "p-graph_v1.2.0",
+      "comments": {
+        "minor": [
+          {
+            "author": "elcraig@microsoft.com",
+            "package": "p-graph",
+            "commit": "e26e1cdadb50bbc8e8b826455c0eaf62291aa60a",
+            "comment": "Update repo-internal Node and TS versions to latest (previous Node compatibility should be maintained), and use type imports/exports where relevant"
+          },
+          {
+            "author": "elcraig@microsoft.com",
+            "package": "p-graph",
+            "commit": "e26e1cdadb50bbc8e8b826455c0eaf62291aa60a",
+            "comment": "Add a named export for the `pGraph` function"
+          }
+        ]
+      }
+    },
+    {
       "date": "Tue, 21 Feb 2023 20:16:34 GMT",
       "tag": "p-graph_v1.1.2",
       "version": "1.1.2",

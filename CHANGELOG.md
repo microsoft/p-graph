@@ -1,8 +1,17 @@
 # Change Log - p-graph
 
-This log was last generated on Tue, 26 Oct 2021 07:12:04 GMT and should not be manually modified.
+<!-- This log was last generated on Wed, 20 Aug 2025 03:56:20 GMT and should not be manually modified. -->
 
 <!-- Start content -->
+
+## 1.2.0
+
+Wed, 20 Aug 2025 03:56:20 GMT
+
+### Minor changes
+
+- Update repo-internal Node and TS versions to latest (previous Node compatibility should be maintained), and use type imports/exports where relevant (elcraig@microsoft.com)
+- Add a named export for the `pGraph` function (elcraig@microsoft.com)
 
 ## 1.1.2
 
