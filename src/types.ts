@@ -18,7 +18,8 @@ export interface PGraphNode {
 export type PGraphNodeMap = Map<string, PGraphNode>;
 
 /**
- * Describes a dependency between two nodes in the p-graph. For each tuple in the array, the first task must complete before the second one begins
+ * Describes a dependency between two nodes in the p-graph.
+ * For each tuple in the array, the first task must complete before the second one begins.
  */
 export type DependencyList = [string, string][];
 
@@ -26,7 +27,11 @@ export type DependencyList = [string, string][];
  * The optional arguments to pass to the run function
  */
 export interface RunOptions {
-  /** The maximum amount of promises that can be executing at the same time. When not provided, we do not limit the number of concurrent tasks and run tasks as soon as they are unblocked */
+  /**
+   * The maximum amount of promises that can be executing at the same time.
+   * When not provided, we do not limit the number of concurrent tasks and run tasks
+   * as soon as they are unblocked.
+   */
   concurrency?: number;
 
   /** Continues the graph even if there's an rejected task */
@@ -34,11 +39,13 @@ export interface RunOptions {
 }
 
 /**
- * An internally used representation of the dependency graph nodes that includes all nodes that this node depends on plus all the nodes that depend on this node.
+ * An internally used representation of the dependency graph nodes that includes all nodes that
+ * this node depends on plus all the nodes that depend on this node.
  */
 export interface PGraphNodeWithDependencies extends PGraphNode {
   /**
-   * The set of nodes that this node depends on. This node should not be executed until all the nodes in this list have been executed to completion.
+   * The set of nodes that this node depends on. This node should not be executed until all the
+   * nodes in this list have been executed to completion.
    */
   dependsOn: Set<string>;
 
@@ -68,5 +75,5 @@ export interface PGraphNodeWithCyclicDependency {
   /**
    * Chain of node where the cyclic dependency was detected.
    */
-  cycle: string[]
+  cycle: string[];
 }

@@ -46,7 +46,8 @@ export class PriorityQueue<T> {
       const leftChildIndex = indexToCheck * 2 + 1;
       const rightChildIndex = indexToCheck * 2 + 2;
 
-      const biggerIndex = this.array[leftChildIndex] > this.array[rightChildIndex] ? leftChildIndex : rightChildIndex;
+      const biggerIndex =
+        this.array[leftChildIndex] > this.array[rightChildIndex] ? leftChildIndex : rightChildIndex;
 
       if (this.array[biggerIndex] > this.array[indexToCheck]) {
         this.swapElements(indexToCheck, biggerIndex);

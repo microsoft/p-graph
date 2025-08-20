@@ -5,11 +5,11 @@
     "module": "CommonJS",
     "moduleResolution": "node",
     "esModuleInterop": true,
-    "allowSyntheticDefaultImports": true,
     "lib": ["ES2017"],
     "outDir": "lib",
     "noUnusedLocals": true,
     "strict": true,
+    "isolatedModules": true,
     "types": ["jest"]
   },
   "include": ["src"]

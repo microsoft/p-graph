@@ -1,13 +1,20 @@
-import { PGraphNodeWithDependencies } from "./types";
+import type { PGraphNodeWithDependencies } from "./types";
 
-/** Creates a map of node ids to a set of all the nodes this node depends on. This creates a new copy of the set to enable duplication */
-function getNewDependsOnMap(pGraphDependencyMap: Map<string, PGraphNodeWithDependencies>): Map<string, Set<string>> {
-  return new Map([...pGraphDependencyMap.entries()].map(([key, value]) => [key, new Set(value.dependsOn)]));
+/**
+ * Creates a map of node ids to a set of all the nodes this node depends on.
+ * This creates a new copy of the set to enable deduplication.
+ */
+function getNewDependsOnMap(
+  pGraphDependencyMap: Map<string, PGraphNodeWithDependencies>,
+): Map<string, Set<string>> {
+  return new Map(
+    [...pGraphDependencyMap.entries()].map(([key, value]) => [key, new Set(value.dependsOn)]),
+  );
 }
 
 function topologicalSort(
   pGraphDependencyMap: Map<string, PGraphNodeWithDependencies>,
-  nodesWithNoDependencies: readonly string[]
+  nodesWithNoDependencies: readonly string[],
 ): string[] {
   const sortedList: string[] = [];
 
@@ -37,12 +44,14 @@ function topologicalSort(
 }
 
 /**
- * Returns a JS map that has the "cumulative" priority for each node, which is defined as the priority of the current node plus the maximum cumulative priority amongst all children.
- * This is helpful for identifying which nodes to schedule first in order to get to higher priority nodes more quickly.
+ * Returns a JS map that has the "cumulative" priority for each node, which is defined as the
+ * priority of the current node plus the maximum cumulative priority amongst all children.
+ * This is helpful for identifying which nodes to schedule first in order to get to higher
+ * priority nodes more quickly.
  */
 export function getNodeCumulativePriorities(
   pGraphDependencyMap: Map<string, PGraphNodeWithDependencies>,
-  nodesWithNoDependencies: string[]
+  nodesWithNoDependencies: string[],
 ): Map<string, number> {
   const nodeCumulativePriorities = new Map<string, number>();
 
@@ -58,12 +67,14 @@ export function getNodeCumulativePriorities(
       ...[...node.dependedOnBy.keys()].map((childId) => {
         const childCumulativePriority = nodeCumulativePriorities.get(childId);
         if (childCumulativePriority === undefined) {
-          throw new Error(`Expected to have already computed the cumulative priority for node ${childId}`);
+          throw new Error(
+            `Expected to have already computed the cumulative priority for node ${childId}`,
+          );
         }
 
         return childCumulativePriority;
       }),
-      0
+      0,
     );
 
     const result = currentNodePriority + maxChildCumulativePriority;

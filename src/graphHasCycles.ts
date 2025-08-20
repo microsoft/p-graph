@@ -1,10 +1,16 @@
-import { PGraphNodeWithCyclicDependency, PGraphNodeWithNoCyclicDependency, PGraphNodeWithDependencies } from "./types";
+import type {
+  PGraphNodeWithCyclicDependency,
+  PGraphNodeWithNoCyclicDependency,
+  PGraphNodeWithDependencies,
+} from "./types";
 
 /**
  * Checks for any cycles in the dependency graph, returning `{ hasCycle: false }` if no cycles were detected.
  * Otherwise it returns the chain of nodes where the cycle was detected.
  */
-export function graphHasCycles(pGraphDependencyMap: Map<string, PGraphNodeWithDependencies>): PGraphNodeWithCyclicDependency | PGraphNodeWithNoCyclicDependency {
+export function graphHasCycles(
+  pGraphDependencyMap: Map<string, PGraphNodeWithDependencies>,
+): PGraphNodeWithCyclicDependency | PGraphNodeWithNoCyclicDependency {
   /**
    *  A map to keep track of the visited and visiting nodes.
    * <node, true> entry means it is currently being visited.
@@ -21,7 +27,7 @@ export function graphHasCycles(pGraphDependencyMap: Map<string, PGraphNodeWithDe
       /**
        * Test whether the sub-graph of this node has cycles.
        */
-      const cycle = searchForCycleDFS(pGraphDependencyMap,  visitMap, nodeId);
+      const cycle = searchForCycleDFS(pGraphDependencyMap, visitMap, nodeId);
       if (cycle.length) {
         return { hasCycle: true, cycle };
       }
@@ -48,7 +54,11 @@ interface StackElement {
   traversing: boolean;
 }
 
-const searchForCycleDFS = (graph: Map<string, PGraphNodeWithDependencies>, visitMap: Map<string, boolean>, nodeId: string): string[] => {
+const searchForCycleDFS = (
+  graph: Map<string, PGraphNodeWithDependencies>,
+  visitMap: Map<string, boolean>,
+  nodeId: string,
+): string[] => {
   const stack: StackElement[] = [{ node: nodeId, traversing: false }];
   while (stack.length > 0) {
     const current = stack[stack.length - 1];
@@ -59,7 +69,7 @@ const searchForCycleDFS = (graph: Map<string, PGraphNodeWithDependencies>, visit
            * The current node has already been visited,
            * hence there is a cycle.
            */
-          const listOfCycle = stack.filter(i => i.traversing).map(a => a.node);
+          const listOfCycle = stack.filter((i) => i.traversing).map((a) => a.node);
           return listOfCycle.slice(listOfCycle.indexOf(current.node));
         } else {
           /**
