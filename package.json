@@ -2,6 +2,7 @@
   "name": "p-graph",
   "version": "1.1.2",
   "license": "MIT",
+  "description": "Run a promise graph with concurrency control",
   "main": "lib/index.js",
   "types": "lib/index.d.ts",
   "scripts": {
@@ -10,25 +11,30 @@
     "test": "jest",
     "release": "beachball publish",
     "checkchange": "beachball check",
-    "change": "beachball change"
+    "change": "beachball change",
+    "format": "prettier --write .",
+    "format:check": "prettier --check ."
   },
   "repository": {
     "url": "https://github.com/microsoft/p-graph"
   },
   "devDependencies": {
-    "@types/jest": "^25.2.1",
-    "beachball": "~2.31.0",
-    "jest": "^25.5.3",
-    "ts-jest": "^25.4.0",
-    "typescript": "~3.8.3"
+    "@types/jest": "^30.0.0",
+    "beachball": "^2.55.0",
+    "jest": "^30.0.0",
+    "prettier": "^3.6.2",
+    "ts-jest": "^29.0.0",
+    "typescript": "~5.9.2"
   },
   "beachball": {
     "ignorePatterns": [
       ".*ignore",
-      ".github/**",
+      ".github/**/*",
       "jest.config.js",
-      "prettier.config.js",
       "yarn.lock"
     ]
+  },
+  "prettier": {
+    "printWidth": 100
   }
 }

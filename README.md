@@ -8,6 +8,8 @@ Run a promise graph with concurrency control.
 $ npm install p-graph
 ```
 
+`p-graph` does not have a strict Node version requirement, but the syntax used is currently intended to remain compatible with Node 12+.
+
 ## Usage
 
 The p-graph library takes in a map of of nodes and a list of dependencies. The keys in the map are unique string identifiers for each node in the graph. The value of the map is the definition of the task, including the function that should be executed by that task in it's run argument. The dependencies list is an array of tuples, each tuple contains the two values that must correspond to ids in the node map. The run function corresponding to the first item in the tuple must complete before the second item in the tuple can begin.
@@ -15,7 +17,7 @@ The p-graph library takes in a map of of nodes and a list of dependencies. The k
 The return value of pGraph is a class with a `run()` function. Calling the `run()` function will return a promise that resolves after all the tasks in the graph have finished completed. Tasks are run in dependency order.
 
 ```js
-const { default: pGraph } = require("p-graph"); // ES6 import also works: import pGraph from 'p-graph';
+const { pGraph } = require("p-graph"); // ES6 import also works: import pGraph from 'p-graph';
 
 const nodeMap = new Map([
   ["putOnShirt", { run:  () => Promise.resolve("put on your shirt") })],

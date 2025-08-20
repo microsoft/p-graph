@@ -1,0 +1,7 @@
+{
+  "type": "minor",
+  "comment": "Update repo-internal Node and TS versions to latest (previous Node compatibility should be maintained), and use type imports/exports where relevant",
+  "packageName": "p-graph",
+  "email": "elcraig@microsoft.com",
+  "dependentChangeType": "patch"
+}

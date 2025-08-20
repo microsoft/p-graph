@@ -1,18 +1,30 @@
-import { RunOptions, PGraphNodeMap, DependencyList, PGraphNodeWithDependencies } from "./types";
+import type {
+  RunOptions,
+  PGraphNodeMap,
+  DependencyList,
+  PGraphNodeWithDependencies,
+} from "./types";
 import { PriorityQueue } from "./PriorityQueue";
 import { getNodeCumulativePriorities } from "./getNodeCumulativePriorities";
 import { graphHasCycles } from "./graphHasCycles";
+
 export class PGraph {
   private readonly pGraphDependencyMap = new Map<string, PGraphNodeWithDependencies>();
 
   /**
-   * Tracks all the nodes that are ready to be executed since it is not depending on the results of any non completed tasks.
+   * Tracks all the nodes that are ready to be executed since it is not depending on the results
+   * of any non completed tasks.
    */
   private readonly nodesWithNoDependencies: string[];
 
   constructor(nodeMap: PGraphNodeMap, dependencies: DependencyList) {
     [...nodeMap.entries()].forEach(([key, node]) => {
-      this.pGraphDependencyMap.set(key, { ...node, dependsOn: new Set(), dependedOnBy: new Set(), failed: false });
+      this.pGraphDependencyMap.set(key, {
+        ...node,
+        dependsOn: new Set(),
+        dependedOnBy: new Set(),
+        failed: false,
+      });
     });
 
     dependencies.forEach(([subjectId, dependentId]) => {
@@ -20,11 +32,15 @@ export class PGraph {
       const dependentNode = this.pGraphDependencyMap.get(dependentId);
 
       if (!subjectNode) {
-        throw new Error(`Dependency graph referenced node with id ${subjectId}, which was not in the node list`);
+        throw new Error(
+          `Dependency graph referenced node with id ${subjectId}, which was not in the node list`,
+        );
       }
 
       if (!dependentNode) {
-        throw new Error(`Dependency graph referenced node with id ${dependentId}, which was not in the node list`);
+        throw new Error(
+          `Dependency graph referenced node with id ${dependentId}, which was not in the node list`,
+        );
       }
 
       subjectNode.dependedOnBy.add(dependentId);
@@ -34,13 +50,17 @@ export class PGraph {
     this.nodesWithNoDependencies = getNodesWithNoDependencies(this.pGraphDependencyMap);
 
     if (this.nodesWithNoDependencies.length == 0 && nodeMap.size > 0) {
-      throw new Error("We could not find a node in the graph with no dependencies, this likely means there is a cycle including all nodes");
+      throw new Error(
+        "We could not find a node in the graph with no dependencies; this likely means there is a cycle including all nodes",
+      );
     }
 
     const graph = graphHasCycles(this.pGraphDependencyMap);
 
     if (graph.hasCycle) {
-      throw new Error(`A cycle has been detected including the following nodes:\n${graph.cycle.join("\n")}`);
+      throw new Error(
+        `A cycle has been detected including the following nodes:\n${graph.cycle.join("\n")}`,
+      );
     }
   }
 
@@ -52,13 +72,20 @@ export class PGraph {
     const concurrency = options?.concurrency;
 
     if (concurrency !== undefined && concurrency < 0) {
-      throw new Error(`concurrency must be either undefined or a positive integer, received ${options?.concurrency}`);
+      throw new Error(
+        `concurrency must be either undefined or a positive integer; received ${options?.concurrency}`,
+      );
     }
 
-    const nodeCumulativePriorities = getNodeCumulativePriorities(this.pGraphDependencyMap, this.nodesWithNoDependencies);
+    const nodeCumulativePriorities = getNodeCumulativePriorities(
+      this.pGraphDependencyMap,
+      this.nodesWithNoDependencies,
+    );
     const priorityQueue = new PriorityQueue<string>();
 
-    this.nodesWithNoDependencies.forEach((itemId) => priorityQueue.insert(itemId, nodeCumulativePriorities.get(itemId)!));
+    this.nodesWithNoDependencies.forEach((itemId) =>
+      priorityQueue.insert(itemId, nodeCumulativePriorities.get(itemId)!),
+    );
 
     let currentlyRunningTaskCount = 0;
 
@@ -76,7 +103,7 @@ export class PGraph {
         if (!taskToRun.failed) {
           await taskToRun.run();
         }
-      } catch(e) {
+      } catch (e) {
         // mark node and its children to be "failed" in the case of continue, we'll traverse, but not run the nodes
         taskToRun.failed = true;
         throw e;
@@ -100,7 +127,8 @@ export class PGraph {
 
             dependentNode.dependsOn.delete(taskToRunId);
 
-            // If the task that just completed was the last remaining dependency for a node, add it to the set of unblocked nodes
+            // If the task that just completed was the last remaining dependency for a node,
+            // add it to the set of unblocked nodes
             if (dependentNode.dependsOn.size === 0) {
               priorityQueue.insert(dependentId, nodeCumulativePriorities.get(dependentId)!);
             }
@@ -123,7 +151,10 @@ export class PGraph {
           return;
         }
 
-        while (!priorityQueue.isEmpty() && (concurrency === undefined || currentlyRunningTaskCount < concurrency)) {
+        while (
+          !priorityQueue.isEmpty() &&
+          (concurrency === undefined || currentlyRunningTaskCount < concurrency)
+        ) {
           scheduleTask()
             .then(() => trySchedulingTasks())
             .catch((e) => {
@@ -149,7 +180,9 @@ export class PGraph {
 /**
  * Given a pGraphDependency map, return the ids of all the nodes that do not have any dependencies.
  */
-function getNodesWithNoDependencies(pGraphDependencyMap: Map<string, PGraphNodeWithDependencies>): string[] {
+function getNodesWithNoDependencies(
+  pGraphDependencyMap: Map<string, PGraphNodeWithDependencies>,
+): string[] {
   const result: string[] = [];
 
   [...pGraphDependencyMap.entries()].forEach(([key, node]) => {

@@ -1,10 +1,10 @@
 import { PGraph } from "./PGraph";
-import { PGraphNodeMap, DependencyList } from "./types";
+import type { PGraphNodeMap, DependencyList } from "./types";
 
-function pGraph(nodeMap: PGraphNodeMap, dependencies: DependencyList) {
+export function pGraph(nodeMap: PGraphNodeMap, dependencies: DependencyList) {
   return new PGraph(nodeMap, dependencies);
 }
 
 export default pGraph;
 
-export * from "./types";
+export type * from "./types";

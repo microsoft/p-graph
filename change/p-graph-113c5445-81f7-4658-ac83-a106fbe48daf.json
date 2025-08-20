@@ -1,0 +1,7 @@
+{
+  "type": "minor",
+  "comment": "Add a named export for the `pGraph` function",
+  "packageName": "p-graph",
+  "email": "elcraig@microsoft.com",
+  "dependentChangeType": "patch"
+}
