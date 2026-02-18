@@ -36,5 +36,9 @@
   },
   "prettier": {
     "printWidth": 100
-  }
+  },
+  "files": [
+    "lib/!(__*)",
+    "lib/!(__*)/**"
+  ]
 }
