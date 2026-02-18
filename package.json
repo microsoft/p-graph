@@ -30,6 +30,7 @@
     "ignorePatterns": [
       ".*ignore",
       ".github/**/*",
+      "src/__tests__/**/*",
       "jest.config.js",
       "yarn.lock"
     ]

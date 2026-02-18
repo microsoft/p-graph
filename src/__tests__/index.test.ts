@@ -1,18 +1,24 @@
-import { pGraph } from "../index";
-import type { PGraphNodeMap, DependencyList } from "../types";
-import { computeMaxConcurrency, defineMockNode, FunctionScheduler } from "./helpers";
+import type { DependencyList, PGraphNodeMap, PGraphNodeRecord } from "../types";
+import { computeMaxConcurrency, FunctionScheduler } from "./helpers";
+import { PGraph } from "../PGraph";
 
 describe("pGraph", () => {
-  it("should accept the dependency graph and execute tasks in order", async () => {
-    const functionScheduler = new FunctionScheduler();
+  /** Make a map with the given keys and no-op runner functions (`jest.fn()`) */
+  function makeNoOpMap(keys: string[]): PGraphNodeMap {
+    return new Map(keys.map((key) => [key, { run: jest.fn() }]));
+  }
 
-    const nodeMap: PGraphNodeMap = new Map([
-      defineMockNode({ name: "putOnShirt", duration: 1 }, functionScheduler),
-      defineMockNode({ name: "putOnShorts", duration: 1 }, functionScheduler),
-      defineMockNode({ name: "putOnJacket", duration: 1 }, functionScheduler),
-      defineMockNode({ name: "putOnShoes", duration: 1 }, functionScheduler),
-      defineMockNode({ name: "tieShoes", duration: 1 }, functionScheduler),
-    ]);
+  it("resolves an empty dependency graph", async () => {
+    expect(new PGraph(new Map(), []).run()).resolves.toBeUndefined();
+  });
+
+  it("accepts the dependency graph and executes tasks in order", async () => {
+    const scheduler = new FunctionScheduler();
+    scheduler.addNode({ name: "putOnShirt", duration: 1 });
+    scheduler.addNode({ name: "putOnShorts", duration: 1 });
+    scheduler.addNode({ name: "putOnJacket", duration: 1 });
+    scheduler.addNode({ name: "putOnShoes", duration: 1 });
+    scheduler.addNode({ name: "tieShoes", duration: 1 });
 
     const dependencies: DependencyList = [
       ["putOnShoes", "tieShoes"],
@@ -21,63 +27,62 @@ describe("pGraph", () => {
       ["putOnShorts", "putOnShoes"],
     ];
 
-    await pGraph(nodeMap, dependencies).run();
+    await new PGraph(scheduler.nodeMap, dependencies).run();
 
-    const { callRecords } = functionScheduler;
+    const { callRecords } = scheduler;
     expect(callRecords).toHaveScheduleOrdering("putOnShoes", "tieShoes");
     expect(callRecords).toHaveScheduleOrdering("putOnShirt", "putOnJacket");
     expect(callRecords).toHaveScheduleOrdering("putOnShorts", "putOnJacket");
     expect(callRecords).toHaveScheduleOrdering("putOnShorts", "putOnShoes");
   });
 
-  it("throws an exception when the dependency graph has a cycle starting from the root", async () => {
-    const nodeMap: PGraphNodeMap = new Map([
-      ["A", { run: () => Promise.resolve() }],
-      ["B", { run: () => Promise.resolve() }],
-      ["C", { run: () => Promise.resolve() }],
-    ]);
+  it("accepts the dependency graph as an object", async () => {
+    const called: string[] = [];
+    const nodeMap: PGraphNodeRecord = {
+      A: { run: jest.fn(() => called.push("A")) },
+      B: { run: jest.fn(() => called.push("B")) },
+    };
 
+    const dependencies: DependencyList = [["B", "A"]];
+
+    await new PGraph(nodeMap, dependencies).run();
+    expect(called).toEqual(["B", "A"]);
+  });
+
+  it("throws an exception when the dependency graph has a cycle starting from the root", async () => {
+    const nodeMap = makeNoOpMap(["A", "B", "C"]);
     const dependencies: DependencyList = [
       ["A", "B"],
       ["B", "C"],
       ["C", "A"],
     ];
 
-    expect(() => pGraph(nodeMap, dependencies)).toThrow();
+    expect(() => new PGraph(nodeMap, dependencies)).toThrowErrorMatchingInlineSnapshot(
+      `"We could not find a node in the graph with no dependencies; this likely means there is a cycle including all nodes"`,
+    );
   });
 
   it("throws an exception with detailed message when the dependency graph has a cycle", async () => {
     // This is almost the same as the last test, except the root node is not a part of the cycle
-    const nodeMap: PGraphNodeMap = new Map([
-      ["A", { run: () => Promise.resolve() }],
-      ["B", { run: () => Promise.resolve() }],
-      ["C", { run: () => Promise.resolve() }],
-      ["D", { run: () => Promise.resolve() }],
-    ]);
-
+    const nodeMap = makeNoOpMap(["A", "B", "C", "D"]);
     const dependencies: DependencyList = [
       ["A", "B"],
       ["B", "C"],
       ["C", "D"],
       ["D", "B"],
     ];
-    const expectedErrorMessage = `A cycle has been detected including the following nodes:
-B
-C
-D`;
-    expect(() => pGraph(nodeMap, dependencies)).toThrow(expectedErrorMessage);
+    expect(() => new PGraph(nodeMap, dependencies)).toThrowErrorMatchingInlineSnapshot(`
+     "A cycle has been detected including the following nodes:
+     A
+     B
+     C
+     D"
+    `);
   });
 
   it("throws an exception in the first instance of a cycle that has been detected when there are overlapped cycles", async () => {
     // This is almost the same as the last test, except the root node is not a part of the cycle
-    const nodeMap: PGraphNodeMap = new Map([
-      ["A", { run: () => Promise.resolve() }],
-      ["B", { run: () => Promise.resolve() }],
-      ["C", { run: () => Promise.resolve() }],
-      ["D", { run: () => Promise.resolve() }],
-      ["E", { run: () => Promise.resolve() }],
-      ["F", { run: () => Promise.resolve() }],
-    ]);
+    const nodeMap = makeNoOpMap(["A", "B", "C", "D", "E", "F"]);
     // B -> C -> E -> F -> D is the first cycle detected
     const dependencies: DependencyList = [
       ["A", "B"],
@@ -88,29 +93,21 @@ D`;
       ["E", "F"],
       ["F", "D"],
     ];
-    const expectedErrorMessage = `A cycle has been detected including the following nodes:
-B
-C
-E
-F
-D`;
-    expect(() => pGraph(nodeMap, dependencies)).toThrow(expectedErrorMessage);
-  });
 
-  it("resolves an empty dependnecy graph", async () => {
-    const nodeMap: PGraphNodeMap = new Map();
-
-    const dependencies: DependencyList = [];
-
-    expect(pGraph(nodeMap, dependencies).run()).resolves.toBeUndefined();
+    expect(() => new PGraph(nodeMap, dependencies)).toThrowErrorMatchingInlineSnapshot(`
+     "A cycle has been detected including the following nodes:
+     A
+     B
+     C
+     D
+     E
+     F"
+    `);
   });
 
   it("throws an exception when run is invoked and a task rejects its promise", async () => {
-    const nodeMap: PGraphNodeMap = new Map([
-      ["A", { run: () => Promise.resolve() }],
-      ["B", { run: () => Promise.resolve() }],
-      ["C", { run: () => Promise.reject("C rejected") }],
-    ]);
+    const nodeMap = makeNoOpMap(["A", "B"]);
+    nodeMap.set("C", { run: () => Promise.reject("C rejected") });
 
     //  A
     // B C
@@ -119,26 +116,12 @@ D`;
       ["A", "C"],
     ];
 
-    await expect(pGraph(nodeMap, dependencies).run()).rejects.toContain("C rejected");
+    await expect(new PGraph(nodeMap, dependencies).run()).rejects.toContain("C rejected");
   });
 
   it("throws an exception, but continues to run the entire graph", async () => {
-    const runFns = {
-      A: jest.fn().mockReturnValue(Promise.resolve()),
-      B: jest.fn().mockReturnValue(Promise.resolve()),
-      D: jest.fn().mockReturnValue(Promise.resolve()),
-      E: jest.fn().mockReturnValue(Promise.resolve()),
-      F: jest.fn().mockReturnValue(Promise.resolve()),
-    };
-
-    const nodeMap: PGraphNodeMap = new Map([
-      ["A", { run: runFns.A }],
-      ["B", { run: runFns.B }],
-      ["C", { run: () => Promise.reject("C rejected") }],
-      ["D", { run: runFns.D }],
-      ["E", { run: runFns.E }],
-      ["F", { run: runFns.F }],
-    ]);
+    const nodeMap = makeNoOpMap(["A", "B", "D", "E", "F"]);
+    nodeMap.set("C", { run: () => Promise.reject("C rejected") });
 
     const dependencies: DependencyList = [
       ["A", "B"],
@@ -150,18 +133,15 @@ D`;
     ];
 
     await expect(
-      pGraph(nodeMap, dependencies).run({ concurrency: 1, continue: true }),
+      new PGraph(nodeMap, dependencies).run({ concurrency: 1, continue: true }),
     ).rejects.toContain("C rejected");
-    expect(runFns.E).toHaveBeenCalled();
-    expect(runFns.F).toHaveBeenCalled();
-    expect(runFns.D).not.toHaveBeenCalled();
+    expect(nodeMap.get("E")!.run).toHaveBeenCalled();
+    expect(nodeMap.get("F")!.run).toHaveBeenCalled();
+    expect(nodeMap.get("D")!.run).not.toHaveBeenCalled();
   });
 
   it("throws when one of the dependencies references a node not in the node map", async () => {
-    const nodeMap: PGraphNodeMap = new Map([
-      ["A", { run: () => Promise.resolve() }],
-      ["B", { run: () => Promise.resolve() }],
-    ]);
+    const nodeMap = makeNoOpMap(["A", "B"]);
 
     //  A
     // B C
@@ -170,18 +150,15 @@ D`;
       ["A", "C"],
     ];
 
-    expect(() => pGraph(nodeMap, dependencies)).toThrow();
+    expect(() => new PGraph(nodeMap, dependencies)).toThrow();
   });
 
   it("should run all dependencies for disconnected graphs", async () => {
-    const functionScheduler = new FunctionScheduler();
-
-    const nodeMap: PGraphNodeMap = new Map([
-      defineMockNode({ name: "A", duration: 1 }, functionScheduler),
-      defineMockNode({ name: "B", duration: 1 }, functionScheduler),
-      defineMockNode({ name: "C", duration: 1 }, functionScheduler),
-      defineMockNode({ name: "D", duration: 1 }, functionScheduler),
-    ]);
+    const scheduler = new FunctionScheduler();
+    scheduler.addNode({ name: "A", duration: 1 });
+    scheduler.addNode({ name: "B", duration: 1 });
+    scheduler.addNode({ name: "C", duration: 1 });
+    scheduler.addNode({ name: "D", duration: 1 });
 
     //  A    D
     // B C
@@ -190,9 +167,9 @@ D`;
       ["A", "C"],
     ];
 
-    await pGraph(nodeMap, dependencies).run();
+    await new PGraph(scheduler.nodeMap, dependencies).run();
 
-    const { callRecords } = functionScheduler;
+    const { callRecords } = scheduler;
     expect(callRecords).toHaveScheduledTask("A");
     expect(callRecords).toHaveScheduledTask("B");
     expect(callRecords).toHaveScheduledTask("C");
@@ -200,13 +177,10 @@ D`;
   });
 
   it("should be able to run more than one task at a time", async () => {
-    const functionScheduler = new FunctionScheduler();
-
-    const nodeMap: PGraphNodeMap = new Map([
-      defineMockNode({ name: "A", duration: 1 }, functionScheduler),
-      defineMockNode({ name: "B", duration: 1 }, functionScheduler),
-      defineMockNode({ name: "C", duration: 1 }, functionScheduler),
-    ]);
+    const scheduler = new FunctionScheduler();
+    scheduler.addNode({ name: "A", duration: 1 });
+    scheduler.addNode({ name: "B", duration: 1 });
+    scheduler.addNode({ name: "C", duration: 1 });
 
     //  A
     // B C
@@ -215,22 +189,19 @@ D`;
       ["A", "C"],
     ];
 
-    await pGraph(nodeMap, dependencies).run();
+    await new PGraph(scheduler.nodeMap, dependencies).run();
 
     // B and C should run concurrently
-    expect(computeMaxConcurrency(functionScheduler.callRecords)).toEqual(2);
+    expect(computeMaxConcurrency(scheduler.callRecords)).toEqual(2);
   });
 
   it("should not exceed maximum concurrency", async () => {
-    const functionScheduler = new FunctionScheduler();
-
-    const funcs = new Map([
-      defineMockNode({ name: "A", duration: 1 }, functionScheduler),
-      defineMockNode({ name: "B", duration: 1 }, functionScheduler),
-      defineMockNode({ name: "C", duration: 1 }, functionScheduler),
-      defineMockNode({ name: "D", duration: 1 }, functionScheduler),
-      defineMockNode({ name: "E", duration: 1 }, functionScheduler),
-    ]);
+    const scheduler = new FunctionScheduler();
+    scheduler.addNode({ name: "A", duration: 1 });
+    scheduler.addNode({ name: "B", duration: 1 });
+    scheduler.addNode({ name: "C", duration: 1 });
+    scheduler.addNode({ name: "D", duration: 1 });
+    scheduler.addNode({ name: "E", duration: 1 });
 
     //    A
     // B C D E
@@ -241,21 +212,18 @@ D`;
       ["A", "E"],
     ];
 
-    await pGraph(funcs, dependencies).run({ concurrency: 3 });
+    await new PGraph(scheduler.nodeMap, dependencies).run({ concurrency: 3 });
 
-    expect(computeMaxConcurrency(functionScheduler.callRecords)).toBeLessThanOrEqual(3);
+    expect(computeMaxConcurrency(scheduler.callRecords)).toBeLessThanOrEqual(3);
   });
 
   it("correctly schedules tasks that have more than one dependency", async () => {
-    const functionScheduler = new FunctionScheduler();
-
-    const funcs = new Map([
-      defineMockNode({ name: "A", duration: 1 }, functionScheduler),
-      defineMockNode({ name: "B", duration: 1 }, functionScheduler),
-      defineMockNode({ name: "C", duration: 1 }, functionScheduler),
-      defineMockNode({ name: "D", duration: 1 }, functionScheduler),
-      defineMockNode({ name: "E", duration: 1 }, functionScheduler),
-    ]);
+    const scheduler = new FunctionScheduler();
+    scheduler.addNode({ name: "A", duration: 1 });
+    scheduler.addNode({ name: "B", duration: 1 });
+    scheduler.addNode({ name: "C", duration: 1 });
+    scheduler.addNode({ name: "D", duration: 1 });
+    scheduler.addNode({ name: "E", duration: 1 });
 
     // All nodes depend on A, D depends on C and B as well
     const dependencies: DependencyList = [
@@ -267,27 +235,24 @@ D`;
       ["B", "D"],
     ];
 
-    await pGraph(funcs, dependencies).run();
+    await new PGraph(scheduler.nodeMap, dependencies).run();
 
-    expect(functionScheduler.callRecords).toHaveScheduleOrdering("A", "B");
-    expect(functionScheduler.callRecords).toHaveScheduleOrdering("A", "C");
-    expect(functionScheduler.callRecords).toHaveScheduleOrdering("A", "D");
-    expect(functionScheduler.callRecords).toHaveScheduleOrdering("A", "E");
-    expect(functionScheduler.callRecords).toHaveScheduleOrdering("B", "D");
-    expect(functionScheduler.callRecords).toHaveScheduleOrdering("C", "D");
+    expect(scheduler.callRecords).toHaveScheduleOrdering("A", "B");
+    expect(scheduler.callRecords).toHaveScheduleOrdering("A", "C");
+    expect(scheduler.callRecords).toHaveScheduleOrdering("A", "D");
+    expect(scheduler.callRecords).toHaveScheduleOrdering("A", "E");
+    expect(scheduler.callRecords).toHaveScheduleOrdering("B", "D");
+    expect(scheduler.callRecords).toHaveScheduleOrdering("C", "D");
   });
 
-  it("should schedule high priority tasks and dependencies before lower priority tasks", async () => {
-    const functionScheduler = new FunctionScheduler();
-
-    const funcs = new Map([
-      defineMockNode({ name: "A", duration: 1 }, functionScheduler),
-      defineMockNode({ name: "B", duration: 1 }, functionScheduler),
-      defineMockNode({ name: "C", duration: 1 }, functionScheduler),
-      defineMockNode({ name: "D", duration: 1 }, functionScheduler),
-      defineMockNode({ name: "E", duration: 1 }, functionScheduler),
-      defineMockNode({ name: "F", duration: 1, priority: 16 }, functionScheduler),
-    ]);
+  it("schedules high priority tasks and dependencies before lower priority tasks", async () => {
+    const scheduler = new FunctionScheduler();
+    scheduler.addNode({ name: "A", duration: 1 });
+    scheduler.addNode({ name: "B", duration: 1 });
+    scheduler.addNode({ name: "C", duration: 1 });
+    scheduler.addNode({ name: "D", duration: 1 });
+    scheduler.addNode({ name: "E", duration: 1 });
+    scheduler.addNode({ name: "F", duration: 1, priority: 16 });
 
     //      A
     //  B   C   D
@@ -301,27 +266,24 @@ D`;
     ];
 
     // Set concurrency to 1 to make it easier to validate execution order
-    await pGraph(funcs, dependencies).run({ concurrency: 1 });
+    await new PGraph(scheduler.nodeMap, dependencies).run({ concurrency: 1 });
 
     // A -> C -> F is the critical path, it should be built first
-    expect(functionScheduler.callRecords).toHaveScheduleOrdering("C", "B");
-    expect(functionScheduler.callRecords).toHaveScheduleOrdering("C", "D");
-    expect(functionScheduler.callRecords).toHaveScheduleOrdering("F", "E");
-    expect(functionScheduler.callRecords).toHaveScheduleOrdering("F", "B");
-    expect(functionScheduler.callRecords).toHaveScheduleOrdering("F", "D");
+    expect(scheduler.callRecords).toHaveScheduleOrdering("C", "B");
+    expect(scheduler.callRecords).toHaveScheduleOrdering("C", "D");
+    expect(scheduler.callRecords).toHaveScheduleOrdering("F", "E");
+    expect(scheduler.callRecords).toHaveScheduleOrdering("F", "B");
+    expect(scheduler.callRecords).toHaveScheduleOrdering("F", "D");
   });
 
-  it("should schedule high priority tasks and dependencies before lower priority tasks when maxConcurrency is greater than 1", async () => {
-    const functionScheduler = new FunctionScheduler();
-
-    const funcs = new Map([
-      defineMockNode({ name: "A", duration: 1 }, functionScheduler),
-      defineMockNode({ name: "B", duration: 16, priority: 16 }, functionScheduler),
-      defineMockNode({ name: "C", duration: 4, priority: 4 }, functionScheduler),
-      defineMockNode({ name: "D", duration: 4, priority: 4 }, functionScheduler),
-      defineMockNode({ name: "E", duration: 12, priority: 12 }, functionScheduler),
-      defineMockNode({ name: "F", duration: 16, priority: 16 }, functionScheduler),
-    ]);
+  it("schedules high priority tasks and dependencies before lower priority tasks when maxConcurrency is greater than 1", async () => {
+    const scheduler = new FunctionScheduler();
+    scheduler.addNode({ name: "A", duration: 1 });
+    scheduler.addNode({ name: "B", duration: 16, priority: 16 });
+    scheduler.addNode({ name: "C", duration: 4, priority: 4 });
+    scheduler.addNode({ name: "D", duration: 4, priority: 4 });
+    scheduler.addNode({ name: "E", duration: 12, priority: 12 });
+    scheduler.addNode({ name: "F", duration: 16, priority: 16 });
 
     //      A
     //  B   C   D
@@ -335,13 +297,14 @@ D`;
     ];
 
     // Set concurrency to 1 to make it easier to validate execution order
-    await pGraph(funcs, dependencies).run({ concurrency: 2 });
+    await new PGraph(scheduler.nodeMap, dependencies).run({ concurrency: 2 });
 
     // A -> C -> F is the critical path, it should be built first
-    expect(computeMaxConcurrency(functionScheduler.callRecords)).toBeLessThanOrEqual(2);
-    expect(functionScheduler.callRecords).toHaveStartedBefore("C", "B");
-    expect(functionScheduler.callRecords).toHaveStartedBefore("C", "D");
-    expect(functionScheduler.callRecords).toHaveStartedBefore("B", "D");
-    expect(functionScheduler.callRecords).toHaveStartedBefore("F", "E");
+    const { callRecords } = scheduler;
+    expect(computeMaxConcurrency(callRecords)).toBeLessThanOrEqual(2);
+    expect(callRecords).toHaveStartedBefore("C", "B");
+    expect(callRecords).toHaveStartedBefore("C", "D");
+    expect(callRecords).toHaveStartedBefore("B", "D");
+    expect(callRecords).toHaveStartedBefore("F", "E");
   });
 });

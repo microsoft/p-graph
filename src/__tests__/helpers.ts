@@ -1,4 +1,4 @@
-import type { PGraphNode } from "../types";
+import type { PGraphNodeMap } from "../types";
 
 interface MockFunctionDefinition {
   /** A friendly name for the function */
@@ -21,77 +21,73 @@ interface MockFunctionCallRecord {
 }
 
 export class FunctionScheduler {
-  private currentlyRunningFunctions: {
+  public readonly callRecords: MockFunctionCallRecord[] = [];
+
+  /** Node map which can be passed to `PGraph` */
+  public readonly nodeMap: PGraphNodeMap = new Map();
+
+  #currentlyRunningFunctions: Array<{
     name: string;
     ticksRemaining: number;
     resolve: () => void;
-  }[] = [];
+  }> = [];
 
-  private tickScheduled: boolean = false;
+  #tickScheduled: boolean = false;
 
-  public callRecords: MockFunctionCallRecord[] = [];
+  /**
+   * Add a node to `this.nodeMap`, which can be passed to `PGraph`.
+   * The node will have a `run` function that runs for a given number of ticks and records
+   * the run in `this.callRecords`.
+   */
+  public addNode(definition: MockFunctionDefinition): void {
+    this.nodeMap.set(definition.name, {
+      run: () => this.#runFunction(definition),
+      priority: definition.priority,
+    });
+  }
 
-  public startExecutingFunction(definition: MockFunctionDefinition): Promise<unknown> {
+  #runFunction(definition: MockFunctionDefinition): Promise<void> {
     const { name, duration } = definition;
     this.callRecords.push({ name, state: "start" });
 
     const promise = new Promise<void>((resolve) => {
-      this.currentlyRunningFunctions.push({
-        name,
-        ticksRemaining: duration,
-        resolve,
-      });
+      this.#currentlyRunningFunctions.push({ name, ticksRemaining: duration, resolve });
     });
 
-    this.ensureTickScheduled();
+    this.#ensureTickScheduled();
 
     return promise;
   }
 
-  private ensureTickScheduled() {
-    if (!this.tickScheduled) {
-      Promise.resolve().then(() => this.tick());
-      this.tickScheduled = true;
-    }
+  #ensureTickScheduled() {
+    if (this.#tickScheduled) return;
+
+    this.#tickScheduled = true;
+    Promise.resolve().then(() => this.#tick());
   }
 
-  private tick() {
-    this.tickScheduled = false;
-    this.currentlyRunningFunctions.forEach((item) => {
-      item.ticksRemaining = item.ticksRemaining - 1;
-    });
+  #tick() {
+    this.#tickScheduled = false;
+    for (const item of this.#currentlyRunningFunctions) {
+      item.ticksRemaining--;
+    }
 
-    const finishedItems = this.currentlyRunningFunctions.filter(
+    const finishedItems = this.#currentlyRunningFunctions.filter(
       (item) => item.ticksRemaining === 0,
     );
-    this.currentlyRunningFunctions = this.currentlyRunningFunctions.filter(
+    this.#currentlyRunningFunctions = this.#currentlyRunningFunctions.filter(
       (item) => item.ticksRemaining !== 0,
     );
 
-    if (finishedItems.length > 0) {
-      finishedItems.forEach((item) => {
-        item.resolve();
-        this.callRecords.push({ name: item.name, state: "end" });
-      });
+    for (const item of finishedItems) {
+      item.resolve();
+      this.callRecords.push({ name: item.name, state: "end" });
     }
 
-    if (this.currentlyRunningFunctions.length > 0) {
-      this.ensureTickScheduled();
+    if (this.#currentlyRunningFunctions.length > 0) {
+      this.#ensureTickScheduled();
     }
   }
-}
-
-export function defineMockNode(
-  definition: MockFunctionDefinition,
-  functionScheduler: FunctionScheduler,
-): [string, PGraphNode] {
-  return [
-    definition.name,
-    {
-      run: () => functionScheduler.startExecutingFunction(definition),
-      priority: definition.priority,
-    },
-  ];
 }
 
 declare global {
@@ -175,10 +171,10 @@ export function computeMaxConcurrency(callRecords: MockFunctionCallRecord[]) {
   let currentConcurrency = 0;
   let maxConcurrencySoFar = 0;
 
-  callRecords.forEach((record) => {
+  for (const record of callRecords) {
     currentConcurrency += record.state === "start" ? 1 : -1;
     maxConcurrencySoFar = Math.max(currentConcurrency, maxConcurrencySoFar);
-  });
+  }
 
   return maxConcurrencySoFar;
 }
