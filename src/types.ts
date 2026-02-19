@@ -7,7 +7,7 @@ export interface PGraphNode {
 
   /**
    * A priority to help the scheduler decide which tasks to pick when many are available to run.
-   * Default value is zero
+   * @default 0
    */
   priority?: number;
 }
@@ -39,7 +39,10 @@ export interface RunOptions {
    */
   concurrency?: number;
 
-  /** Continues the graph even if there's an rejected task */
+  /**
+   * If true, continue running the graph even if a task fails. Tasks dependent on the failed
+   * task will be skipped, and an **array of errors** will be thrown at the end.
+   */
   continue?: boolean;
 }
 

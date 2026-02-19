@@ -9,15 +9,16 @@ import { PriorityQueue } from "./PriorityQueue";
 import { getNodeCumulativePriorities } from "./getNodeCumulativePriorities";
 
 export class PGraph {
-  readonly #pGraphDependencyMap = new Map<string, PGraphNodeWithDependencies>();
+  /** Original dependency map for the graph */
+  readonly #dependencyMap: ReadonlyMap<string, PGraphNodeWithDependencies>;
 
   /**
    * Tracks all the nodes that are ready to be executed since it is not depending on the results
    * of any non completed tasks.
    */
-  readonly #nodesWithNoDependencies: string[];
+  readonly #nodesWithNoDependencies: ReadonlyArray<string>;
 
-  readonly #nodeCumulativePriorities: Record<string, number>;
+  readonly #nodeCumulativePriorities: Readonly<Record<string, number>>;
 
   /**
    * Create a new graph. Throws an error if a cycle is detected.
@@ -29,9 +30,10 @@ export class PGraph {
   constructor(nodeMap: PGraphNodeMap | PGraphNodeRecord, dependencies: DependencyList) {
     const entries = nodeMap instanceof Map ? nodeMap.entries() : Object.entries(nodeMap);
     const entryCount = nodeMap instanceof Map ? nodeMap.size : (entries as unknown[]).length;
+    const dependencyMap = new Map<string, PGraphNodeWithDependencies>();
 
     for (const [key, node] of entries) {
-      this.#pGraphDependencyMap.set(key, {
+      dependencyMap.set(key, {
         ...node,
         dependsOn: new Set(),
         dependedOnBy: new Set(),
@@ -40,8 +42,8 @@ export class PGraph {
     }
 
     for (const [subjectId, dependentId] of dependencies) {
-      const subjectNode = this.#pGraphDependencyMap.get(subjectId);
-      const dependentNode = this.#pGraphDependencyMap.get(dependentId);
+      const subjectNode = dependencyMap.get(subjectId);
+      const dependentNode = dependencyMap.get(dependentId);
 
       if (!subjectNode) {
         throw new Error(
@@ -59,30 +61,44 @@ export class PGraph {
       dependentNode.dependsOn.add(subjectId);
     }
 
-    this.#nodesWithNoDependencies = [];
-    for (const [key, node] of this.#pGraphDependencyMap.entries()) {
+    const nodesWithNoDependencies: string[] = [];
+    for (const [key, node] of dependencyMap.entries()) {
       if (node.dependsOn.size === 0) {
-        this.#nodesWithNoDependencies.push(key);
+        nodesWithNoDependencies.push(key);
       }
     }
+    this.#nodesWithNoDependencies = nodesWithNoDependencies;
 
-    if (!this.#nodesWithNoDependencies.length && entryCount > 0) {
+    if (!nodesWithNoDependencies.length && entryCount > 0) {
       throw new Error(
         "We could not find a node in the graph with no dependencies; this likely means there is a cycle including all nodes",
       );
     }
 
     // Compute priorities and validate that no cycles exist in the graph (throws if so)
-    this.#nodeCumulativePriorities = getNodeCumulativePriorities(this.#pGraphDependencyMap);
+    this.#nodeCumulativePriorities = getNodeCumulativePriorities(dependencyMap);
+    this.#dependencyMap = dependencyMap;
   }
 
   /**
    * Runs all the tasks in the promise graph in dependency order.
    * The graph can be run multiple times.
    *
-   * If a task fails, the promise will reject with an **array of errors.**
+   * Failure behavior:
+   * - If `continue` is false or unset and a task fails, the promise will reject immediately with
+   *   a **single error**.
+   * - If `continue` is true and a task fails, any tasks not dependent on the failed task will
+   *   continue running, and an **array of errors** will be thrown at the end.
    */
   run(options?: RunOptions): Promise<void> {
+    // Copy the dependency map so the graph can be reused
+    const dependencyMap = new Map(
+      [...this.#dependencyMap.entries()].map(([key, node]) => [
+        key,
+        { ...node, dependsOn: new Set(node.dependsOn), dependedOnBy: new Set(node.dependedOnBy) },
+      ]),
+    );
+
     const concurrency = options?.concurrency;
 
     if (concurrency !== undefined && concurrency < 0) {
@@ -105,7 +121,7 @@ export class PGraph {
       if (!taskToRunId) {
         throw new Error("Tried to schedule a task when there were no pending tasks!");
       }
-      const taskToRun = this.#pGraphDependencyMap.get(taskToRunId)!;
+      const taskToRun = dependencyMap.get(taskToRunId)!;
 
       try {
         currentlyRunningTaskCount += 1;
@@ -129,7 +145,7 @@ export class PGraph {
 
           // Let's remove this task from all dependent task's dependency array
           for (const dependentId of taskToRun.dependedOnBy) {
-            const dependentNode = this.#pGraphDependencyMap.get(dependentId)!;
+            const dependentNode = dependencyMap.get(dependentId)!;
 
             if (taskToRun.failed) {
               dependentNode.failed = true;
@@ -170,8 +186,8 @@ export class PGraph {
             .catch((e) => {
               errors.push(e);
 
-              // if a continue option is set, this merely records what errors have been encountered
-              // it'll continue down the execution until all the tasks that still works
+              // If continue is set, this merely records what errors have been encountered,
+              // then continues execution of the remaining tasks not blocked by a failed task.
               if (options?.continue) {
                 trySchedulingTasks();
               } else {

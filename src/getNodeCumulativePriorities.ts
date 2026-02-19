@@ -1,3 +1,4 @@
+import { findCycle } from "./findCycle";
 import type { PGraphNodeWithDependencies } from "./types";
 
 /**
@@ -68,8 +69,13 @@ export function getNodeCumulativePriorities(
     const unprocessedNodes = Array.from(dependencyMap.keys()).filter(
       (nodeId) => !(nodeId in nodeCumulativePriorities),
     );
+
+    // Find the first cycle (which might not be the only cycle), or fall back to showing
+    // all unprocessed nodes
+    const cycleNodes = findCycle(unprocessedNodes, dependencyMap) || unprocessedNodes;
+
     throw new Error(
-      `A cycle has been detected including the following nodes:\n${unprocessedNodes.join("\n")}`,
+      `A cycle has been detected including the following nodes:\n${cycleNodes.join("\n")}`,
     );
   }
 
