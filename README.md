@@ -1,4 +1,4 @@
-# p-graph
+# p-graph - moved to https://github.com/microsoft/beachball/tree/main/packages/p-graph
 
 Run a promise graph with concurrency control.
 
